@@ -1,12 +1,143 @@
 <Page
     x:Class="ClashWinUI.Pages.SubscriptionPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:ClashWinUI.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource LayerFillColorDefaultBrush}">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="18"
+            x:Name="PageHeader"
+            Grid.Row="0"
+            Margin="36,24,36,16"
+            AutomationProperties.HeadingLevel="Level1"
+            Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
+        <CommandBar
+            Grid.Row="1"
+            Margin="24,0,24,12"
+            DefaultLabelPosition="Right"
+            Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton
+                    x:Name="ImportButton"
+                    Label="{x:Bind Subscription_Import, Mode=OneWay}"
+                    Click="ImportButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE8B5;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton
+                    x:Name="NewButton"
+                    Click="NewButton_Click"
+                    Label="{x:Bind Subscription_New, Mode=OneWay}">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE710;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton
+                    x:Name="OpenButton"
+                    Click="OpenButton_Click"
+                    Label="{x:Bind Subscription_Open, Mode=OneWay}">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="&#xE8E5;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+        <Grid Grid.Row="2" Margin="24,0,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Grid.Row="0"
+                Margin="0,0,0,8"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="{x:Bind Subscription_List, Mode=OneWay}" />
+            <ListView
+                x:Name="SubscriptionListView"
+                Grid.Row="1"
+                MinHeight="200"
+                SelectionMode="Single"
+                ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}"
+                SelectionChanged="SubscriptionListView_SelectionChanged"
+                DoubleTapped="SubscriptionListView_DoubleTapped">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:SubscriptionItem">
+                        <Grid Padding="12,10" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="100" />
+                                <ColumnDefinition Width="*" MinWidth="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                Text="{x:Bind Name, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind UrlOrPath, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind RefreshedAgoDisplay, Mode=OneWay}" />
+                            <TextBlock
+                                Grid.Column="3"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind UsageTotalDisplay, Mode=OneWay}" />
+                            <Button
+                                Grid.Column="4"
+                                VerticalAlignment="Center"
+                                ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneWay}"
+                                Click="SubscriptionRefresh_Click">
+                                <Button.Content>
+                                    <FontIcon Glyph="&#xE72C;" />
+                                </Button.Content>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <Grid
+                x:Name="EmptyStatePanel"
+                Grid.Row="1"
+                MinHeight="120"
+                VerticalAlignment="Center"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="24">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind Subscription_NoItems, Mode=OneWay}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

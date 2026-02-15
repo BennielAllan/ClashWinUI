@@ -23,6 +23,31 @@ public static class Strings
     public static string Nav_Home => IsZh ? "首页" : "Home";
     public static string Nav_Proxy => IsZh ? "代理" : "Proxy";
     public static string Nav_Subscription => IsZh ? "订阅" : "Subscription";
+
+    // Subscription page
+    public static string Subscription_Import => IsZh ? "导入" : "Import";
+    public static string Subscription_New => IsZh ? "新建" : "New";
+    public static string Subscription_Open => IsZh ? "打开" : "Open";
+    public static string Subscription_List => IsZh ? "订阅列表" : "Subscription list";
+    public static string Subscription_ImportFromUrl => IsZh ? "从 URL 导入" : "Import from URL";
+    public static string Subscription_ImportFromFile => IsZh ? "从文件导入" : "Import from file";
+    public static string Subscription_NewProfile => IsZh ? "新建配置" : "New profile";
+    public static string Subscription_OpenFile => IsZh ? "打开文件" : "Open file";
+    public static string Subscription_UrlPlaceholder => IsZh ? "输入订阅或配置 URL…" : "Enter subscription or config URL...";
+    public static string Subscription_Name => IsZh ? "名称" : "Name";
+    public static string Subscription_UrlOrPath => IsZh ? "URL / 路径" : "URL / Path";
+    public static string Subscription_Updated => IsZh ? "更新时间" : "Updated";
+    public static string Subscription_TypeRemote => IsZh ? "远程" : "Remote";
+    public static string Subscription_TypeLocal => IsZh ? "本地" : "Local";
+    public static string Subscription_Delete => IsZh ? "删除" : "Delete";
+    public static string Subscription_Update => IsZh ? "更新" : "Update";
+    public static string Subscription_NoItems => IsZh ? "暂无订阅，点击「导入」或「新建」添加。" : "No subscriptions. Use Import or New to add.";
+    public static string Subscription_Refresh => IsZh ? "刷新" : "Refresh";
+    public static string Subscription_RefreshedNever => IsZh ? "从未刷新" : "Never refreshed";
+    public static string Subscription_UsageTotal => IsZh ? "用量 / 总量" : "Usage / Total";
+    public static string Common_Cancel => IsZh ? "取消" : "Cancel";
+    public static string Common_Ok => IsZh ? "确定" : "OK";
+    public static string Subscription_SelectFirst => IsZh ? "请先选择一项订阅。" : "Please select a subscription first.";
     public static string Nav_Connections => IsZh ? "连接" : "Connections";
     public static string Nav_Rules => IsZh ? "规则" : "Rules";
     public static string Nav_Logs => IsZh ? "日志" : "Logs";
