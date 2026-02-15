@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Microsoft.UI.Xaml;
 
 namespace ClashWinUI.Models;
@@ -17,8 +18,33 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
     private DateTimeOffset? _updatedAt;
     private long? _usageBytes;
     private long? _totalBytes;
+    private bool _isRefreshing;
+    private int _updateIntervalMinutes;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>True while a refresh is in progress; used to show ProgressRing and disable the refresh button. Not persisted (JsonIgnore).</summary>
+    [JsonIgnore]
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        set
+        {
+            if (!SetField(ref _isRefreshing, value)) return;
+            OnPropertyChanged(nameof(IsRefreshButtonVisible));
+            OnPropertyChanged(nameof(RefreshRingVisibility));
+            OnPropertyChanged(nameof(RefreshButtonVisibility));
+        }
+    }
+
+    /// <summary>False when IsRefreshing is true, so the refresh button can be hidden during load.</summary>
+    public bool IsRefreshButtonVisible => !IsRefreshing;
+
+    /// <summary>Visibility for the refresh ProgressRing (Visible when refreshing).</summary>
+    public Visibility RefreshRingVisibility => IsRefreshing ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Visibility for the refresh button (Collapsed when refreshing).</summary>
+    public Visibility RefreshButtonVisibility => IsRefreshing ? Visibility.Collapsed : Visibility.Visible;
 
     public string Id
     {
@@ -63,7 +89,10 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
         set
         {
             if (SetField(ref _usageBytes, value))
+            {
                 OnPropertyChanged(nameof(UsageTotalDisplay));
+                OnPropertyChanged(nameof(UsageProgress));
+            }
         }
     }
 
@@ -74,9 +103,25 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
         set
         {
             if (SetField(ref _totalBytes, value))
+            {
                 OnPropertyChanged(nameof(UsageTotalDisplay));
+                OnPropertyChanged(nameof(UsageProgress));
+            }
         }
     }
+
+    /// <summary>Auto-refresh interval in minutes; 0 = disabled.</summary>
+    public int UpdateIntervalMinutes
+    {
+        get => _updateIntervalMinutes;
+        set => SetField(ref _updateIntervalMinutes, value);
+    }
+
+    /// <summary>Progress 0.0–1.0 for usage/total; 0 when no total.</summary>
+    public double UsageProgress =>
+        TotalBytes.HasValue && TotalBytes.Value > 0 && UsageBytes.HasValue
+            ? Math.Clamp((double)UsageBytes.Value / TotalBytes.Value, 0, 1)
+            : 0;
 
     /// <summary>Relative time since last refresh, e.g. "5 minutes ago" / "5 分钟前".</summary>
     public string RefreshedAgoDisplay => ClashWinUI.Helpers.SubscriptionDisplayHelper.GetRefreshedAgo(UpdatedAt);
@@ -89,6 +134,9 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
 
     /// <summary>Tooltip for refresh button (same for all items).</summary>
     public string RefreshTooltip => ClashWinUI.Strings.Subscription_Refresh;
+
+    /// <summary>Tooltip for more-actions button.</summary>
+    public string MoreTooltip => ClashWinUI.Strings.Subscription_More;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

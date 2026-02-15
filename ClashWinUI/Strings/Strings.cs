@@ -40,6 +40,10 @@ public static class Strings
     public static string Subscription_TypeRemote => IsZh ? "远程" : "Remote";
     public static string Subscription_TypeLocal => IsZh ? "本地" : "Local";
     public static string Subscription_Delete => IsZh ? "删除" : "Delete";
+    public static string Subscription_DeleteConfirm => IsZh ? "确定删除该订阅？" : "Delete this subscription?";
+    public static string Subscription_EditInfo => IsZh ? "编辑信息" : "Edit info";
+    public static string Subscription_More => IsZh ? "更多" : "More";
+    public static string Subscription_UpdateIntervalMinutes => IsZh ? "更新间隔（分钟）" : "Update interval (minutes)";
     public static string Subscription_Update => IsZh ? "更新" : "Update";
     public static string Subscription_NoItems => IsZh ? "暂无订阅，点击「导入」或「新建」添加。" : "No subscriptions. Use Import or New to add.";
     public static string Subscription_Refresh => IsZh ? "刷新" : "Refresh";

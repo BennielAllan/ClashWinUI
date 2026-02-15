@@ -18,10 +18,13 @@ public sealed partial class SubscriptionPage : Page
     public string Subscription_Import => Strings.Subscription_Import;
     public string Subscription_New => Strings.Subscription_New;
     public string Subscription_Open => Strings.Subscription_Open;
-    public string Subscription_List => Strings.Subscription_List;
     public string Subscription_NoItems => Strings.Subscription_NoItems;
     public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
     public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
+    public string Subscription_EditInfo => Strings.Subscription_EditInfo;
+    public string Subscription_More => Strings.Subscription_More;
+    public string Subscription_Delete => Strings.Subscription_Delete;
+    public string Subscription_UpdateIntervalMinutes => Strings.Subscription_UpdateIntervalMinutes;
 
     public ObservableCollection<SubscriptionItem> SubscriptionItems => SubscriptionService.Instance.Items;
     private SubscriptionItem? _selectedItem;
@@ -66,10 +69,98 @@ public sealed partial class SubscriptionPage : Page
         _selectedItem = SubscriptionListView.SelectedItem as SubscriptionItem;
     }
 
+    private void SubscriptionMore_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not SubscriptionItem item) return;
+        var button = (FrameworkElement)sender;
+        var flyout = new MenuFlyout();
+        var editItem = new MenuFlyoutItem { Text = Strings.Subscription_EditInfo };
+        editItem.Click += async (_, _) => { await ShowEditSubscriptionDialogAsync(item); };
+        var deleteItem = new MenuFlyoutItem { Text = Strings.Subscription_Delete };
+        deleteItem.Click += async (_, _) =>
+        {
+            var confirm = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = Strings.Subscription_Delete,
+                Content = Strings.Subscription_DeleteConfirm,
+                PrimaryButtonText = Strings.Common_Ok,
+                CloseButtonText = Strings.Common_Cancel
+            };
+            if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+            {
+                SubscriptionService.Instance.Remove(item);
+                UpdateEmptyState();
+            }
+        };
+        flyout.Items.Add(editItem);
+        flyout.Items.Add(deleteItem);
+        flyout.ShowAt(button);
+    }
+
+    private async System.Threading.Tasks.Task ShowEditSubscriptionDialogAsync(SubscriptionItem item)
+    {
+        var nameBox = new TextBox
+        {
+            Text = item.Name,
+            PlaceholderText = Strings.Subscription_Name,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var urlBox = new TextBox
+        {
+            Text = item.UrlOrPath,
+            PlaceholderText = Strings.Subscription_UrlPlaceholder,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var intervalBox = new NumberBox
+        {
+            Value = item.UpdateIntervalMinutes,
+            Minimum = 0,
+            SmallChange = 1,
+            LargeChange = 60,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+            Width = 120,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        panel.Children.Add(nameBox);
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(urlBox);
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(intervalBox);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = Strings.Subscription_EditInfo,
+            Content = panel,
+            PrimaryButtonText = Strings.Common_Ok,
+            CloseButtonText = Strings.Common_Cancel
+        };
+        dialog.PrimaryButtonClick += (_, _) =>
+        {
+            item.Name = nameBox.Text?.Trim() ?? item.Name;
+            item.UrlOrPath = urlBox.Text?.Trim() ?? item.UrlOrPath;
+            item.UpdateIntervalMinutes = (int)Math.Max(0, intervalBox.Value);
+            _ = SubscriptionService.Instance.SaveAsync();
+        };
+        await dialog.ShowAsync();
+    }
+
     private async void SubscriptionRefresh_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not SubscriptionItem item) return;
-        await RefreshSubscriptionAsync(item);
+        item.IsRefreshing = true;
+        try
+        {
+            await RefreshSubscriptionAsync(item);
+        }
+        finally
+        {
+            item.IsRefreshing = false;
+        }
     }
 
     private static async Task RefreshSubscriptionAsync(SubscriptionItem item)

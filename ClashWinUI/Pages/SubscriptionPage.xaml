@@ -26,12 +26,12 @@
             DefaultLabelPosition="Right"
             Background="{ThemeResource LayerFillColorDefaultBrush}">
             <CommandBar.PrimaryCommands>
-                <AppBarButton
+                    <AppBarButton
                     x:Name="ImportButton"
                     Label="{x:Bind Subscription_Import, Mode=OneWay}"
                     Click="ImportButton_Click">
                     <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xE8B5;" />
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
                     </AppBarButton.Icon>
                 </AppBarButton>
                 <AppBarButton
@@ -39,7 +39,7 @@
                     Click="NewButton_Click"
                     Label="{x:Bind Subscription_New, Mode=OneWay}">
                     <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xE710;" />
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE710;" />
                     </AppBarButton.Icon>
                 </AppBarButton>
                 <AppBarButton
@@ -47,24 +47,18 @@
                     Click="OpenButton_Click"
                     Label="{x:Bind Subscription_Open, Mode=OneWay}">
                     <AppBarButton.Icon>
-                        <FontIcon Glyph="&#xE8E5;" />
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8E5;" />
                     </AppBarButton.Icon>
                 </AppBarButton>
             </CommandBar.PrimaryCommands>
         </CommandBar>
         <Grid Grid.Row="2" Margin="24,0,24,24">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock
-                Grid.Row="0"
-                Margin="0,0,0,8"
-                Style="{StaticResource BodyStrongTextBlockStyle}"
-                Text="{x:Bind Subscription_List, Mode=OneWay}" />
             <ListView
                 x:Name="SubscriptionListView"
-                Grid.Row="1"
+                Grid.Row="0"
                 MinHeight="200"
                 SelectionMode="Single"
                 ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}"
@@ -74,8 +68,8 @@
                     <DataTemplate x:DataType="models:SubscriptionItem">
                         <Grid Padding="12,10" ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" MinWidth="100" />
-                                <ColumnDefinition Width="*" MinWidth="120" />
+                                <ColumnDefinition Width="Auto" MinWidth="100" />
+                                <ColumnDefinition Width="*" MinWidth="140" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
@@ -87,12 +81,20 @@
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                 Text="{x:Bind Name, Mode=OneWay}"
                                 TextTrimming="CharacterEllipsis" />
-                            <TextBlock
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind UrlOrPath, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4" MaxWidth="200">
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind UsageTotalDisplay, Mode=OneWay}" />
+                                <ProgressBar
+                                    Maximum="1"
+                                    Value="{x:Bind UsageProgress, Mode=OneWay}"
+                                    Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                                    Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    Height="4"
+                                    CornerRadius="2" />
+                            </StackPanel>
                             <TextBlock
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
@@ -100,21 +102,33 @@
                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
                                 ToolTipService.ToolTip="{x:Bind RefreshedAgoDisplay, Mode=OneWay}" />
-                            <TextBlock
-                                Grid.Column="3"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
-                                ToolTipService.ToolTip="{x:Bind UsageTotalDisplay, Mode=OneWay}" />
+                            <Grid Grid.Column="3" VerticalAlignment="Center" Width="32" Height="32">
+                                <ProgressRing
+                                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
+                                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
+                                    Width="16"
+                                    Height="16"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                                <Button
+                                    Style="{StaticResource TransparentIconButtonStyle}"
+                                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneWay}"
+                                    Click="SubscriptionRefresh_Click"
+                                    Width="32"
+                                    Height="32">
+                                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE72C;" FontSize="14" />
+                                </Button>
+                            </Grid>
                             <Button
+                                Style="{StaticResource TransparentIconButtonStyle}"
                                 Grid.Column="4"
                                 VerticalAlignment="Center"
-                                ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneWay}"
-                                Click="SubscriptionRefresh_Click">
-                                <Button.Content>
-                                    <FontIcon Glyph="&#xE72C;" />
-                                </Button.Content>
+                                ToolTipService.ToolTip="{x:Bind MoreTooltip, Mode=OneWay}"
+                                Click="SubscriptionMore_Click"
+                                Width="32"
+                                Height="32">
+                                <SymbolIcon Symbol="More" />
                             </Button>
                         </Grid>
                     </DataTemplate>
@@ -122,7 +136,7 @@
             </ListView>
             <Grid
                 x:Name="EmptyStatePanel"
-                Grid.Row="1"
+                Grid.Row="0"
                 MinHeight="120"
                 VerticalAlignment="Center"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
