@@ -483,3 +483,5 @@ $RECYCLE.BIN/
 
 # custom
 /refer/
+/ClashWinUI/Core/*
+!ClashWinUI/Core/PUT_CORE_HERE.txt
