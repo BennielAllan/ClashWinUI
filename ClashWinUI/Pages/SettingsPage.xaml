@@ -54,8 +54,8 @@
                         x:Name="LanguageComboBox"
                         AutomationProperties.AutomationId="LanguageComboBox"
                         SelectionChanged="LanguageComboBox_SelectionChanged">
-                        <ComboBoxItem Content="English" Tag="en" />
-                        <ComboBoxItem Content="中文" Tag="zh" />
+                        <ComboBoxItem Content="{x:Bind Language_English, Mode=OneWay}" Tag="en" />
+                        <ComboBoxItem Content="{x:Bind Language_Chinese, Mode=OneWay}" Tag="zh" />
                     </ComboBox>
                 </toolkit:SettingsCard>
 
@@ -64,7 +64,7 @@
                 <toolkit:SettingsExpander
                     Margin="0,0,0,36"
                     Description="{x:Bind Settings_About_Description, Mode=OneWay}"
-                    Header="ClashWinUI">
+                    Header="{x:Bind About_AppName, Mode=OneWay}">
                     <toolkit:SettingsExpander.HeaderIcon>
                         <FontIcon Glyph="&#xE946;" />
                     </toolkit:SettingsExpander.HeaderIcon>

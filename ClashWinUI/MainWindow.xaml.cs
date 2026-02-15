@@ -14,13 +14,31 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         SetWindowProperties();
+        AppSettings.LanguageChanged += OnLanguageChanged;
         RootGrid.ActualThemeChanged += (_, _) =>
             TitleBarHelper.ApplySystemThemeToCaptionButtons(this, RootGrid.ActualTheme);
     }
 
+    private void ApplyLocalizedStrings()
+    {
+        Title = Strings.App_Title;
+        titleBar.Title = Strings.App_Title;
+        if (controlsSearchBox != null)
+            controlsSearchBox.PlaceholderText = Strings.Search_Placeholder;
+        UpdateNavigationItemLabels();
+    }
+
+    private void OnLanguageChanged()
+    {
+        ApplyLocalizedStrings();
+        var currentType = RootFrame.CurrentSourcePageType;
+        if (currentType != null)
+            RootFrame.Navigate(currentType);
+    }
+
     private void SetWindowProperties()
     {
-        Title = "ClashWinUI";
+        ApplyLocalizedStrings();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(titleBar);
         if (AppWindow != null)
@@ -39,6 +57,7 @@ public sealed partial class MainWindow : Window
     private void OnNavigationViewLoaded(object sender, RoutedEventArgs e)
     {
         RootFrame.NavigationFailed += OnNavigationFailed;
+        controlsSearchBox.PlaceholderText = Strings.Search_Placeholder;
         UpdateNavigationItemLabels();
         if (RootFrame.Content == null)
         {
@@ -56,6 +75,8 @@ public sealed partial class MainWindow : Window
         RulesItem.Content = Strings.Nav_Rules;
         LogsItem.Content = Strings.Nav_Logs;
         TestItem.Content = Strings.Nav_Test;
+        if (NavigationViewControl.SettingsItem is NavigationViewItem settingsItem)
+            settingsItem.Content = Strings.Nav_Settings;
     }
 
     private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)

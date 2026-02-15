@@ -27,6 +27,9 @@ public sealed partial class SettingsPage : Page
     public string Settings_Language_Description => Strings.Settings_Language_Description;
     public string Settings_About => Strings.Settings_About;
     public string Settings_About_Description => Strings.Settings_About_Description;
+    public string Language_English => Strings.Language_English;
+    public string Language_Chinese => Strings.Language_Chinese;
+    public string About_AppName => Strings.About_AppName;
 
     public SettingsPage()
     {

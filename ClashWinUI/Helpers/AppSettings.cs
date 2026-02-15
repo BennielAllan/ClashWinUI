@@ -1,3 +1,4 @@
+using System;
 using Microsoft.UI.Xaml;
 using Windows.Storage;
 
@@ -53,9 +54,18 @@ public static class AppSettings
         {
             try
             {
-                ApplicationData.Current.LocalSettings.Values[KeyLanguage] = value ?? "en";
+                var newValue = value ?? "en";
+                if (ApplicationData.Current.LocalSettings.Values[KeyLanguage] as string == newValue)
+                    return;
+                ApplicationData.Current.LocalSettings.Values[KeyLanguage] = newValue;
+                LanguageChanged?.Invoke();
             }
             catch { }
         }
     }
+
+    /// <summary>
+    /// Raised when the user changes the display language. Subscribe to refresh UI.
+    /// </summary>
+    public static event Action? LanguageChanged;
 }

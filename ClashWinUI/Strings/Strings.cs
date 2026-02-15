@@ -28,4 +28,13 @@ public static class Strings
     public static string Nav_Logs => IsZh ? "日志" : "Logs";
     public static string Nav_Test => IsZh ? "测试" : "Test";
     public static string Nav_Settings => IsZh ? "设置" : "Settings";
+
+    // App & shell
+    public static string App_Title => "ClashWinUI";
+    public static string Search_Placeholder => IsZh ? "搜索…" : "Search...";
+    public static string About_AppName => "ClashWinUI";
+
+    // Language display names (for language selector)
+    public static string Language_English => "English";
+    public static string Language_Chinese => "中文";
 }
