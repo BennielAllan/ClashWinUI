@@ -35,7 +35,7 @@ public sealed class SubscriptionService
             if (file != null)
             {
                 var text = await FileIO.ReadTextAsync(file);
-                var list = JsonSerializer.Deserialize<List<SubscriptionItem>>(text);
+                var list = JsonSerializer.Deserialize(text, AppJsonContext.Default.ListSubscriptionItem);
                 if (list != null)
                 {
                     _items.Clear();
@@ -55,7 +55,7 @@ public sealed class SubscriptionService
             var folder = ApplicationData.Current.LocalFolder;
             var file = await folder.CreateFileAsync("subscriptions.json", CreationCollisionOption.ReplaceExisting);
             var list = _items.ToList();
-            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(list, AppJsonContext.Default.ListSubscriptionItem);
             await FileIO.WriteTextAsync(file, json);
         }
         catch { /* ignore */ }

@@ -47,6 +47,9 @@ public sealed class MihomoService
     private HttpClient? _http;
     private readonly SemaphoreSlim _startLock = new(1, 1);
 
+    /// <summary>Last stderr output from the core process (for diagnostics).</summary>
+    public string LastStartupLog { get; private set; } = string.Empty;
+
     // ── Core process management ──────────────────────────────────────────────
 
     /// <summary>
@@ -68,55 +71,6 @@ public sealed class MihomoService
         }
     }
 
-    /// <summary>
-    /// Generates a minimal config file for mihomo that sets up the API port/secret
-    /// but uses whatever proxy rules are in the active subscription config.
-    /// Returns the path of the temp config file written.
-    /// </summary>
-    private static string WriteBootstrapConfig(int port, string secret, string? userConfigPath)
-    {
-        var workDir = Path.Combine(Path.GetTempPath(), "ClashWinUI");
-        Directory.CreateDirectory(workDir);
-
-        string configPath;
-        if (!string.IsNullOrEmpty(userConfigPath) && File.Exists(userConfigPath))
-        {
-            // Inject external-controller settings into the user's YAML.
-            configPath = Path.Combine(workDir, "active-config.yaml");
-            var yaml = File.ReadAllText(userConfigPath);
-            // Strip existing controller / secret lines and prepend new ones.
-            var lines = new List<string>(yaml.Split('\n'));
-            lines.RemoveAll(l =>
-                l.TrimStart().StartsWith("external-controller", StringComparison.OrdinalIgnoreCase) ||
-                l.TrimStart().StartsWith("secret", StringComparison.OrdinalIgnoreCase));
-            lines.Insert(0, $"external-controller: '127.0.0.1:{port}'");
-            if (!string.IsNullOrEmpty(secret))
-                lines.Insert(1, $"secret: '{secret}'");
-            File.WriteAllText(configPath, string.Join('\n', lines));
-        }
-        else
-        {
-            // Bare-minimum config so mihomo starts and exposes its API.
-            configPath = Path.Combine(workDir, "bootstrap.yaml");
-            var yaml = $@"mixed-port: 7890
-external-controller: '127.0.0.1:{port}'
-{(string.IsNullOrEmpty(secret) ? "" : $"secret: '{secret}'")}
-mode: rule
-log-level: info
-allow-lan: false
-";
-            File.WriteAllText(configPath, yaml);
-        }
-
-        return configPath;
-    }
-
-    /// <summary>
-    /// Starts the mihomo core process.
-    /// </summary>
-    /// <param name="port">API port (default 9090).</param>
-    /// <param name="secret">API secret (empty = no auth).</param>
-    /// <param name="userConfigPath">Optional path to a subscription YAML file to load.</param>
     public async Task StartAsync(int port = 9090, string secret = "", string? userConfigPath = null)
     {
         await _startLock.WaitAsync();
@@ -131,30 +85,68 @@ allow-lan: false
             if (!File.Exists(exePath))
                 throw new FileNotFoundException($"mihomo core not found at: {exePath}");
 
-            var configPath = WriteBootstrapConfig(port, secret, userConfigPath);
-            var workDir = Path.GetDirectoryName(configPath)!;
+            // Use a persistent work dir under LocalAppData so geo databases survive reboots.
+            var workDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ClashWinUI");
+            Directory.CreateDirectory(workDir);
+
+            // Ensure GeoIP database exists before launching (mihomo needs it to start).
+            await EnsureGeodataAsync(workDir);
+
+            // Write an active config that is guaranteed to have external-controller.
+            var configPath = PrepareConfig(port, secret, userConfigPath, workDir);
 
             _http = BuildHttpClient();
+
+            // No -ext-ctl needed — external-controller is already injected into the config.
+            var args = $"-d \"{workDir}\" -f \"{configPath}\"";
+            if (!string.IsNullOrEmpty(secret))
+                args += $" -secret \"{secret}\"";
 
             var psi = new ProcessStartInfo
             {
                 FileName = exePath,
-                Arguments = $"-d \"{workDir}\" -f \"{configPath}\"",
+                Arguments = args,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = false,
-                RedirectStandardError = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
 
+            LastStartupLog = string.Empty;
             _process = Process.Start(psi);
             if (_process == null)
                 throw new InvalidOperationException("Failed to start mihomo process.");
 
-            _process.EnableRaisingEvents = true;
-            _process.Exited += (_, _) => RunningStateChanged?.Invoke(this, EventArgs.Empty);
+            // Capture stderr for diagnostics without blocking.
+            var logBuilder = new StringBuilder();
+            _process.OutputDataReceived += (_, e) => { if (e.Data != null) logBuilder.AppendLine(e.Data); };
+            _process.ErrorDataReceived  += (_, e) => { if (e.Data != null) logBuilder.AppendLine(e.Data); };
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
 
-            // Give the core a moment to initialise the HTTP listener.
-            await Task.Delay(800);
+            _process.EnableRaisingEvents = true;
+            _process.Exited += (_, _) =>
+            {
+                LastStartupLog = logBuilder.ToString();
+                RunningStateChanged?.Invoke(this, EventArgs.Empty);
+            };
+
+            // Poll until the API is responsive (up to 8 s).
+            var ready = await WaitForApiAsync(TimeSpan.FromSeconds(8));
+            LastStartupLog = logBuilder.ToString();
+
+            if (!ready)
+            {
+                // Process may have exited with an error; grab output and throw.
+                await Task.Delay(200); // let async readers flush
+                LastStartupLog = logBuilder.ToString();
+                var detail = string.IsNullOrWhiteSpace(LastStartupLog)
+                    ? "mihomo did not respond on port " + port
+                    : LastStartupLog.Trim();
+                throw new InvalidOperationException("mihomo failed to start:\n" + detail);
+            }
 
             RunningStateChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -162,6 +154,25 @@ allow-lan: false
         {
             _startLock.Release();
         }
+    }
+
+    /// <summary>Polls GET / until the core API responds or the timeout elapses. Returns true if ready.</summary>
+    private async Task<bool> WaitForApiAsync(TimeSpan timeout)
+    {
+        using var probe = BuildHttpClient();
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (_process?.HasExited == true) return false;
+            try
+            {
+                var r = await probe.GetAsync("/");
+                if (r.IsSuccessStatusCode || (int)r.StatusCode < 500) return true;
+            }
+            catch { /* not ready yet */ }
+            await Task.Delay(200);
+        }
+        return false;
     }
 
     /// <summary>
@@ -187,6 +198,90 @@ allow-lan: false
         }
     }
 
+    // ── Geodata bootstrap ─────────────────────────────────────────────────────
+
+    private static readonly (string File, string Url)[] GeodataFiles =
+    [
+        ("Country.mmdb",  "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country.mmdb"),
+        ("GeoSite.dat",   "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat"),
+        ("GeoIP.dat",     "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat"),
+    ];
+
+    /// <summary>
+    /// Downloads missing GeoIP/GeoSite data files into <paramref name="workDir"/>.
+    /// Only downloads if the file is absent (cached on disk indefinitely).
+    /// </summary>
+    private static async Task EnsureGeodataAsync(string workDir)
+    {
+        using var http = new HttpClient();
+        http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
+        // Follow redirects (GitHub releases redirect to CDN).
+        http.Timeout = TimeSpan.FromSeconds(60);
+
+        foreach (var (file, url) in GeodataFiles)
+        {
+            var dest = Path.Combine(workDir, file);
+            if (File.Exists(dest)) continue;
+
+            var tmpDest = dest + ".tmp";
+            try
+            {
+                var bytes = await http.GetByteArrayAsync(url);
+                await File.WriteAllBytesAsync(tmpDest, bytes);
+                File.Move(tmpDest, dest, overwrite: true);
+            }
+            catch
+            {
+                try { File.Delete(tmpDest); } catch { }
+                // Non-fatal: mihomo may still start without GeoSite/GeoIP.dat.
+                // Country.mmdb failure will cause mihomo to fail — rethrow for that.
+                if (file == "Country.mmdb") throw;
+            }
+        }
+    }
+
+    // ── Config preparation ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Reads the user config (if any), injects/replaces the external-controller line,
+    /// writes the result to workDir/active-config.yaml, and returns that path.
+    /// </summary>
+    private static string PrepareConfig(int port, string secret, string? userConfigPath, string workDir)
+    {
+        string yaml;
+        if (!string.IsNullOrEmpty(userConfigPath) && File.Exists(userConfigPath))
+        {
+            yaml = File.ReadAllText(userConfigPath);
+            var extCtlLine = $"external-controller: '127.0.0.1:{port}'";
+            var pattern = @"^external-controller\s*:.*";
+            var opts = System.Text.RegularExpressions.RegexOptions.Multiline;
+            if (System.Text.RegularExpressions.Regex.IsMatch(yaml, pattern, opts))
+                yaml = System.Text.RegularExpressions.Regex.Replace(yaml, pattern, extCtlLine, opts);
+            else
+                yaml = extCtlLine + "\n" + yaml;
+
+            if (!string.IsNullOrEmpty(secret))
+            {
+                var secretLine = $"secret: '{secret}'";
+                var secretPattern = @"^secret\s*:.*";
+                if (System.Text.RegularExpressions.Regex.IsMatch(yaml, secretPattern, opts))
+                    yaml = System.Text.RegularExpressions.Regex.Replace(yaml, secretPattern, secretLine, opts);
+                else
+                    yaml = secretLine + "\n" + yaml;
+            }
+        }
+        else
+        {
+            yaml = $"mixed-port: 7890\nexternal-controller: '127.0.0.1:{port}'\nmode: rule\nlog-level: info\nallow-lan: false\n";
+            if (!string.IsNullOrEmpty(secret))
+                yaml = $"secret: '{secret}'\n" + yaml;
+        }
+
+        var configPath = Path.Combine(workDir, "active-config.yaml");
+        File.WriteAllText(configPath, yaml);
+        return configPath;
+    }
+
     // ── HTTP client helper ────────────────────────────────────────────────────
 
     private HttpClient BuildHttpClient()
@@ -208,7 +303,7 @@ allow-lan: false
     /// </summary>
     public async Task<List<ProxyGroup>> GetProxyGroupsAsync(CancellationToken ct = default)
     {
-        var resp = await Http.GetFromJsonAsync<ProxiesResponse>("/proxies", ct);
+        var resp = await Http.GetFromJsonAsync("/proxies", AppJsonContext.Default.ProxiesResponse, ct);
         if (resp == null) return new();
 
         var allEntries = resp.Proxies;
@@ -257,12 +352,40 @@ allow-lan: false
                     group.Nodes.Add(node);
                 else
                 {
-                    // Could be a sub-group reference — represent as a pseudo-node.
-                    group.Nodes.Add(new ProxyNode { Name = nodeName, Type = "Selector" });
+                    // Sub-group reference — pseudo-node with the actual group type.
+                    var subType = allEntries.TryGetValue(nodeName, out var subEntry) ? subEntry.Type : "Selector";
+                    group.Nodes.Add(new ProxyNode { Name = nodeName, Type = subType });
                 }
             }
 
+            // Sort: sub-group nodes first, then leaf proxy nodes.
+            group.Nodes.Sort((a, b) =>
+            {
+                bool aIsGroup = IsGroupType(a.Type);
+                bool bIsGroup = IsGroupType(b.Type);
+                if (aIsGroup == bIsGroup) return 0;
+                return aIsGroup ? -1 : 1;
+            });
+
+            // Build per-group view wrappers — IsNow is scoped to this group.
+            foreach (var n in group.Nodes)
+                group.NodeViews.Add(new ProxyNodeView(group, n));
+
             groups.Add(group);
+        }
+
+        // Sort groups using the GLOBAL group's All list, which reflects the config-file definition order.
+        if (allEntries.TryGetValue("GLOBAL", out var globalEntry) && globalEntry.All is { Count: > 0 })
+        {
+            var order = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < globalEntry.All.Count; i++)
+                order.TryAdd(globalEntry.All[i], i);
+            groups.Sort((a, b) =>
+            {
+                int ai = order.TryGetValue(a.Name, out var av) ? av : int.MaxValue;
+                int bi = order.TryGetValue(b.Name, out var bv) ? bv : int.MaxValue;
+                return ai.CompareTo(bi);
+            });
         }
 
         return groups;
@@ -276,7 +399,9 @@ allow-lan: false
     /// </summary>
     public async Task<bool> SelectProxyAsync(string groupName, string proxyName, CancellationToken ct = default)
     {
-        var body = JsonContent.Create(new { name = proxyName });
+        var body = new StringContent(
+            $"{{\"name\":{JsonStr(proxyName)}}}",
+            Encoding.UTF8, "application/json");
         var resp = await Http.PutAsync($"/proxies/{Uri.EscapeDataString(groupName)}", body, ct);
         return resp.IsSuccessStatusCode;
     }
@@ -294,7 +419,7 @@ allow-lan: false
         {
             var url = $"/proxies/{Uri.EscapeDataString(proxyName)}/delay" +
                       $"?url={Uri.EscapeDataString(testUrl)}&timeout={timeout}";
-            var resp = await Http.GetFromJsonAsync<DelayResponse>(url, ct);
+            var resp = await Http.GetFromJsonAsync(url, AppJsonContext.Default.DelayResponse, ct);
             return resp?.Delay ?? 0;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadGateway)
@@ -311,7 +436,7 @@ allow-lan: false
 
     public async Task<MihomoConfig?> GetConfigAsync(CancellationToken ct = default)
     {
-        return await Http.GetFromJsonAsync<MihomoConfig>("/configs", ct);
+        return await Http.GetFromJsonAsync("/configs", AppJsonContext.Default.MihomoConfig, ct);
     }
 
     /// <summary>
@@ -319,16 +444,51 @@ allow-lan: false
     /// </summary>
     public async Task<bool> SetModeAsync(string mode, CancellationToken ct = default)
     {
-        var body = JsonContent.Create(new { mode });
+        var body = new StringContent(
+            $"{{\"mode\":{JsonStr(mode)}}}",
+            Encoding.UTF8, "application/json");
         var resp = await Http.PatchAsync("/configs", body, ct);
         return resp.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Enables or disables TUN mode via PATCH /configs.
+    /// </summary>
+    public async Task<bool> SetTunAsync(bool enable, CancellationToken ct = default)
+    {
+        var enableStr = enable ? "true" : "false";
+        var body = new StringContent(
+            $"{{\"tun\":{{\"enable\":{enableStr},\"stack\":\"system\"}}}}",
+            Encoding.UTF8, "application/json");
+        var resp = await Http.PatchAsync("/configs", body, ct);
+        return resp.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Returns the active (group, node) pair by following GLOBAL → top group → Now.
+    /// Returns ("", "") when the info is unavailable.
+    /// </summary>
+    public async Task<(string group, string node)> GetCurrentProxyAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var resp = await Http.GetFromJsonAsync("/proxies", AppJsonContext.Default.ProxiesResponse, ct);
+            if (resp == null) return ("", "");
+            if (!resp.Proxies.TryGetValue("GLOBAL", out var global)) return ("", "");
+            var topGroupName = global.Now ?? "";
+            if (string.IsNullOrEmpty(topGroupName)) return ("", "");
+            if (!resp.Proxies.TryGetValue(topGroupName, out var topGroup)) return (topGroupName, topGroupName);
+            var nodeName = topGroup.Now ?? topGroupName;
+            return (topGroupName, nodeName);
+        }
+        catch { return ("", ""); }
     }
 
     // ── REST API: Connections ─────────────────────────────────────────────────
 
     public async Task<ConnectionsResponse?> GetConnectionsAsync(CancellationToken ct = default)
     {
-        return await Http.GetFromJsonAsync<ConnectionsResponse>("/connections", ct);
+        return await Http.GetFromJsonAsync("/connections", AppJsonContext.Default.ConnectionsResponse, ct);
     }
 
     public async Task<bool> CloseConnectionAsync(string id, CancellationToken ct = default)
@@ -347,7 +507,7 @@ allow-lan: false
 
     public async Task<List<RuleItem>> GetRulesAsync(CancellationToken ct = default)
     {
-        var resp = await Http.GetFromJsonAsync<RulesResponse>("/rules", ct);
+        var resp = await Http.GetFromJsonAsync("/rules", AppJsonContext.Default.RulesResponse, ct);
         return resp?.Rules ?? new();
     }
 
@@ -365,8 +525,7 @@ allow-lan: false
         var wsUri = new Uri($"ws://127.0.0.1:{ApiPort}/logs?level={level}");
         await ConnectAndStreamAsync(wsUri, json =>
         {
-            var item = JsonSerializer.Deserialize<LogItem>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var item = JsonSerializer.Deserialize(json, AppJsonContext.Default.LogItem);
             if (item != null) onLog(item);
         }, ct);
     }
@@ -382,8 +541,7 @@ allow-lan: false
         var wsUri = new Uri($"ws://127.0.0.1:{ApiPort}/connections");
         await ConnectAndStreamAsync(wsUri, json =>
         {
-            var snap = JsonSerializer.Deserialize<ConnectionsResponse>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var snap = JsonSerializer.Deserialize(json, AppJsonContext.Default.ConnectionsResponse);
             if (snap != null) onSnapshot(snap);
         }, ct);
     }
@@ -398,8 +556,7 @@ allow-lan: false
         var wsUri = new Uri($"ws://127.0.0.1:{ApiPort}/traffic");
         await ConnectAndStreamAsync(wsUri, json =>
         {
-            var item = JsonSerializer.Deserialize<TrafficItem>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var item = JsonSerializer.Deserialize(json, AppJsonContext.Default.TrafficItem);
             if (item != null) onTraffic(item);
         }, ct);
     }
@@ -438,4 +595,10 @@ allow-lan: false
         catch (OperationCanceledException) { /* expected on shutdown */ }
         catch (WebSocketException) { /* core stopped, caller handles reconnect logic */ }
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>Encodes a string as a JSON string literal (with surrounding quotes).</summary>
+    private static string JsonStr(string s) =>
+        "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 }

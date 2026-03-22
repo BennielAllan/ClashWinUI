@@ -111,6 +111,20 @@ public static class Strings
     public static string Core_Running => IsZh ? "运行中" : "Running";
     public static string Core_Stopped => IsZh ? "未运行" : "Stopped";
     public static string Core_StartFailed => IsZh ? "内核启动失败" : "Failed to start core";
+    public static string Subscription_NoCacheHint => IsZh
+        ? "订阅尚未下载本地缓存，请先点击刷新按钮下载内容，再启动内核。"
+        : "Subscription has no local cache. Please refresh it first, then start the core.";
+
+    // Home page
+    public static string Home_ActiveSubscription => IsZh ? "当前订阅" : "Active Subscription";
+    public static string Home_NetworkMode => IsZh ? "网络模式" : "Network Mode";
+    public static string Home_SystemProxy => IsZh ? "系统代理" : "System Proxy";
+    public static string Home_SystemProxy_Description => IsZh ? "将系统代理指向 mihomo 入站端口" : "Route system proxy through mihomo inbound port";
+    public static string Home_TunMode => IsZh ? "虚拟网卡 (TUN)" : "TUN Mode";
+    public static string Home_TunMode_Description => IsZh ? "使用虚拟网卡接管所有流量" : "Capture all traffic via virtual TUN adapter";
+    public static string Home_ProxyMode => IsZh ? "代理模式" : "Proxy Mode";
+    public static string Home_CurrentNode => IsZh ? "当前节点" : "Current Node";
+    public static string Home_NoSubscription => IsZh ? "无可用订阅" : "No subscription available";
 
     // Common
     public static string Common_Refresh => IsZh ? "刷新" : "Refresh";

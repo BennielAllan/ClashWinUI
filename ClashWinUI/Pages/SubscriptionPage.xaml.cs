@@ -6,9 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using Windows.System;
-using Windows.UI;
 using ClashWinUI.Helpers;
 using ClashWinUI.Models;
 using ClashWinUI.Services;
@@ -27,27 +25,6 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
     public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
     public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
 
-    // ── Core status ───────────────────────────────────────────────────────────
-
-    public string CoreStatusLabel => MihomoService.Instance.IsRunning ? Strings.Core_Running : Strings.Core_Stopped;
-
-    public Brush CoreStatusColor => MihomoService.Instance.IsRunning
-        ? new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50)) // green
-        : new SolidColorBrush(Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E)); // grey
-
-    public string CoreToggleLabel => MihomoService.Instance.IsRunning ? Strings.Core_Stop : Strings.Core_Start;
-
-    private bool _coreIsTransitioning;
-    public bool IsCoreToggleEnabled => !_coreIsTransitioning;
-
-    private void RefreshCoreState()
-    {
-        OnPropertyChanged(nameof(CoreStatusLabel));
-        OnPropertyChanged(nameof(CoreStatusColor));
-        OnPropertyChanged(nameof(CoreToggleLabel));
-        OnPropertyChanged(nameof(IsCoreToggleEnabled));
-    }
-
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
@@ -60,14 +37,12 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         InitializeComponent();
         Loaded += OnLoaded;
         SubscriptionService.Instance.Items.CollectionChanged += (_, _) => UpdateEmptyState();
-        MihomoService.Instance.RunningStateChanged += (_, _) => RefreshCoreState();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
-        RefreshCoreState();
     }
 
     private void UpdateEmptyState()
@@ -265,23 +240,33 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             PrimaryButtonText = Strings.Subscription_Import,
             CloseButtonText = Strings.Common_Cancel
         };
+        SubscriptionItem? newItem = null;
         dialog.PrimaryButtonClick += (_, _) =>
         {
             var url = urlBox.Text?.Trim();
             var name = nameBox.Text?.Trim();
             if (!string.IsNullOrEmpty(url))
             {
-                SubscriptionService.Instance.Add(new SubscriptionItem
+                newItem = new SubscriptionItem
                 {
                     Name = string.IsNullOrEmpty(name) ? url : name,
                     UrlOrPath = url,
                     IsRemote = true,
                     UpdatedAt = DateTimeOffset.Now
-                });
+                };
+                SubscriptionService.Instance.Add(newItem);
                 UpdateEmptyState();
             }
         };
         await dialog.ShowAsync();
+
+        // Auto-download the subscription content right after import.
+        if (newItem != null)
+        {
+            newItem.IsRefreshing = true;
+            try { await RefreshSubscriptionAsync(newItem); }
+            finally { newItem.IsRefreshing = false; }
+        }
     }
 
     private async Task ImportFromFileAsync()
@@ -337,6 +322,17 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
                 http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
                 var response = await http.GetAsync(item.UrlOrPath);
                 response.EnsureSuccessStatusCode();
+
+                // Save YAML content to local cache so mihomo can load it.
+                var profilesDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "ClashWinUI", "profiles");
+                System.IO.Directory.CreateDirectory(profilesDir);
+                var cachePath = System.IO.Path.Combine(profilesDir, $"{item.Id}.yaml");
+                var content = await response.Content.ReadAsStringAsync();
+                await System.IO.File.WriteAllTextAsync(cachePath, content);
+                item.CachedConfigPath = cachePath;
+
                 item.UpdatedAt = DateTimeOffset.Now;
                 if (response.Headers.TryGetValues("Subscription-Userinfo", out var values))
                     ParseSubscriptionUserinfo(string.Join(" ", values), item);
@@ -370,55 +366,5 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         }
         if (upload.HasValue && download.HasValue) item.UsageBytes = upload.Value + download.Value;
         if (total.HasValue) item.TotalBytes = total.Value;
-    }
-
-    // ── Core start/stop ───────────────────────────────────────────────────────
-
-    private async void CoreToggle_Click(object sender, RoutedEventArgs e)
-    {
-        _coreIsTransitioning = true;
-        OnPropertyChanged(nameof(IsCoreToggleEnabled));
-        try
-        {
-            if (MihomoService.Instance.IsRunning)
-            {
-                await MihomoService.Instance.StopAsync();
-            }
-            else
-            {
-                // Find the first local subscription file to use as config.
-                string? configPath = null;
-                foreach (var item in SubscriptionItems)
-                {
-                    if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) &&
-                        System.IO.File.Exists(item.UrlOrPath))
-                    {
-                        configPath = item.UrlOrPath;
-                        break;
-                    }
-                }
-
-                try
-                {
-                    await MihomoService.Instance.StartAsync(9090, string.Empty, configPath);
-                }
-                catch (Exception ex)
-                {
-                    var dlg = new ContentDialog
-                    {
-                        XamlRoot = XamlRoot,
-                        Title = Strings.Core_StartFailed,
-                        Content = ex.Message,
-                        CloseButtonText = Strings.Common_Ok
-                    };
-                    await dlg.ShowAsync();
-                }
-            }
-        }
-        finally
-        {
-            _coreIsTransitioning = false;
-            RefreshCoreState();
-        }
     }
 }

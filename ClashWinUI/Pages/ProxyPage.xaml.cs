@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using ClashWinUI.Models;
 using ClashWinUI.Services;
 
@@ -69,6 +68,14 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
 
     public bool IsNotRunning => !MihomoService.Instance.IsRunning;
 
+    private string? _loadError;
+    public string? LoadError
+    {
+        get => _loadError;
+        private set { _loadError = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasLoadError)); }
+    }
+    public bool HasLoadError => !string.IsNullOrEmpty(_loadError);
+
     public Visibility LoadingVisibility => IsLoading ? Visibility.Visible : Visibility.Collapsed;
     public Visibility GroupsVisibility => !IsLoading && ProxyGroups.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility EmptyVisibility => !IsLoading && ProxyGroups.Count == 0 && MihomoService.Instance.IsRunning ? Visibility.Visible : Visibility.Collapsed;
@@ -78,7 +85,6 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
     public ObservableCollection<ProxyGroup> ProxyGroups { get; } = new();
 
     private readonly DispatcherQueue _dq;
-    private readonly Dictionary<string, ProxyGroup> _nodeGroupMap = new();
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -116,22 +122,40 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
     private async Task LoadProxiesAsync()
     {
         IsLoading = true;
+        LoadError = null;
         try
         {
-            var groups = await MihomoService.Instance.GetProxyGroupsAsync();
-            ProxyGroups.Clear();
-            _nodeGroupMap.Clear();
-            foreach (var g in groups)
+            // Retry up to 3 times — the core may still be loading its config on first start.
+            List<ProxyGroup> groups = new();
+            Exception? lastEx = null;
+            for (int attempt = 0; attempt < 3; attempt++)
             {
-                ProxyGroups.Add(g);
-                foreach (var node in g.Nodes)
-                    _nodeGroupMap[node.Name] = g;
+                if (attempt > 0) await Task.Delay(1500);
+                try
+                {
+                    groups = await MihomoService.Instance.GetProxyGroupsAsync();
+                    if (groups.Count > 0) break;
+                }
+                catch (Exception ex) { lastEx = ex; }
             }
+
+            if (groups.Count == 0 && lastEx != null)
+                throw lastEx;
+
+            if (groups.Count == 0)
+                LoadError = Strings.Proxy_NoGroups + " — " + Strings.Subscription_NoCacheHint;
+
+            ProxyGroups.Clear();
+            foreach (var g in groups)
+                ProxyGroups.Add(g);
 
             var config = await MihomoService.Instance.GetConfigAsync();
             if (config != null) CurrentMode = config.Mode;
         }
-        catch { /* core may still be starting */ }
+        catch (Exception ex)
+        {
+            LoadError = ex.Message;
+        }
         finally
         {
             IsLoading = false;
@@ -202,12 +226,12 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         group.IsExpanded = !group.IsExpanded;
     }
 
-    private async void Node_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private async void Node_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.Tag is not ProxyNode node) return;
-        if (!_nodeGroupMap.TryGetValue(node.Name, out var group) || !group.IsSelector) return;
-        var ok = await MihomoService.Instance.SelectProxyAsync(group.Name, node.Name);
-        if (ok) group.Now = node.Name;
+        if ((sender as FrameworkElement)?.Tag is not ProxyNodeView nv) return;
+        if (!nv.Group.IsSelector) return;
+        var ok = await MihomoService.Instance.SelectProxyAsync(nv.Group.Name, nv.Node.Name);
+        if (ok) nv.Group.Now = nv.Node.Name;
     }
 
     private async void ModeRule_Checked(object sender, RoutedEventArgs e)

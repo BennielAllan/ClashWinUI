@@ -220,6 +220,18 @@ public sealed class MihomoConfig
 
     [JsonPropertyName("ipv6")]
     public bool Ipv6 { get; set; }
+
+    [JsonPropertyName("tun")]
+    public TunConfig? Tun { get; set; }
+}
+
+public sealed class TunConfig
+{
+    [JsonPropertyName("enable")]
+    public bool Enable { get; set; }
+
+    [JsonPropertyName("stack")]
+    public string Stack { get; set; } = "system";
 }
 
 // ── Rules models ─────────────────────────────────────────────────────────────

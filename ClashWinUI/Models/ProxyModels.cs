@@ -10,6 +10,7 @@ namespace ClashWinUI.Models;
 
 /// <summary>
 /// A single proxy node (e.g., a VMESS/SOCKS5/Selector entry from /proxies).
+/// Shared across all groups that contain this proxy — delay/testing state is global.
 /// </summary>
 public sealed class ProxyNode : INotifyPropertyChanged
 {
@@ -22,7 +23,6 @@ public sealed class ProxyNode : INotifyPropertyChanged
     public string Type { get; set; } = string.Empty;
     public bool Udp { get; set; }
 
-    /// <summary>Latest measured round-trip delay in ms. Null = not tested yet.</summary>
     public int? Delay
     {
         get => _delay;
@@ -37,7 +37,6 @@ public sealed class ProxyNode : INotifyPropertyChanged
         }
     }
 
-    /// <summary>True while a speed-test is in progress for this node.</summary>
     [JsonIgnore]
     public bool IsTesting
     {
@@ -60,15 +59,14 @@ public sealed class ProxyNode : INotifyPropertyChanged
         var d => $"{d} ms"
     };
 
-    /// <summary>Color coded by latency tier.</summary>
     [JsonIgnore]
     public Windows.UI.Color DelayColor => Delay switch
     {
-        null => Windows.UI.Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E),   // grey
-        0 => Windows.UI.Color.FromArgb(0xFF, 0xF4, 0x43, 0x36),      // red (timeout)
-        <= 150 => Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50), // green
-        <= 500 => Windows.UI.Color.FromArgb(0xFF, 0xFF, 0x98, 0x00), // amber
-        _ => Windows.UI.Color.FromArgb(0xFF, 0xF4, 0x43, 0x36),      // red
+        null => Windows.UI.Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E),
+        0 => Windows.UI.Color.FromArgb(0xFF, 0xF4, 0x43, 0x36),
+        <= 150 => Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50),
+        <= 500 => Windows.UI.Color.FromArgb(0xFF, 0xFF, 0x98, 0x00),
+        _ => Windows.UI.Color.FromArgb(0xFF, 0xF4, 0x43, 0x36),
     };
 
     [JsonIgnore]
@@ -79,6 +77,47 @@ public sealed class ProxyNode : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+/// <summary>
+/// Group-scoped view of a proxy node. Computes IsNow relative to its owning group,
+/// so the same ProxyNode can show different selection states in different groups.
+/// Also used as the Button Tag so Node_Click knows exactly which group was clicked.
+/// </summary>
+public sealed class ProxyNodeView : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public ProxyNodeView(ProxyGroup group, ProxyNode node)
+    {
+        Group = group;
+        Node = node;
+        // Propagate node property changes (delay, testing) to the view.
+        node.PropertyChanged += (_, e) => PropertyChanged?.Invoke(this, e);
+        // When the group's selection changes, recompute IsNow.
+        group.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ProxyGroup.Now))
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsNow)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedDotVisibility)));
+            }
+        };
+    }
+
+    public ProxyGroup Group { get; }
+    public ProxyNode Node { get; }
+
+    // Forwarded for direct XAML binding.
+    public string Name => Node.Name;
+    public string Type => Node.Type;
+    public bool IsTesting => Node.IsTesting;
+    public string DelayDisplay => Node.DelayDisplay;
+    public Visibility DelayVisibility => Node.DelayVisibility;
+    public Visibility TestingVisibility => Node.TestingVisibility;
+
+    public bool IsNow => Group.Now == Node.Name;
+    public Visibility SelectedDotVisibility => IsNow ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>
@@ -95,7 +134,6 @@ public sealed class ProxyGroup : INotifyPropertyChanged
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Currently selected proxy name within this group.</summary>
     public string Now
     {
         get => _now;
@@ -107,12 +145,15 @@ public sealed class ProxyGroup : INotifyPropertyChanged
         }
     }
 
-    /// <summary>All proxy names that belong to this group.</summary>
     public List<string> All { get; set; } = new();
 
-    /// <summary>Resolved node objects (populated from the flat proxies map).</summary>
+    /// <summary>Resolved node objects. Shared across groups; used for testing.</summary>
     [JsonIgnore]
     public List<ProxyNode> Nodes { get; set; } = new();
+
+    /// <summary>Per-group view wrappers used for display (IsNow is group-scoped).</summary>
+    [JsonIgnore]
+    public List<ProxyNodeView> NodeViews { get; set; } = new();
 
     [JsonIgnore]
     public bool IsExpanded
@@ -146,7 +187,7 @@ public sealed class ProxyGroup : INotifyPropertyChanged
     public Visibility ExpandedVisibility => IsExpanded ? Visibility.Visible : Visibility.Collapsed;
 
     [JsonIgnore]
-    public string ChevronGlyph => IsExpanded ? "\uE70E" : "\uE76C"; // up / down chevron
+    public string ChevronGlyph => IsExpanded ? "\uE70E" : "\uE76C";
 
     [JsonIgnore]
     public Visibility TestButtonVisibility => IsTesting ? Visibility.Collapsed : Visibility.Visible;
@@ -154,11 +195,9 @@ public sealed class ProxyGroup : INotifyPropertyChanged
     [JsonIgnore]
     public Visibility TestRingVisibility => IsTesting ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>Only Selector groups allow manual node selection.</summary>
     [JsonIgnore]
     public bool IsSelector => Type.Equals("Selector", System.StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Localized type label.</summary>
     [JsonIgnore]
     public string TypeLabel => Type;
 
@@ -166,18 +205,14 @@ public sealed class ProxyGroup : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-/// <summary>
-/// Response shape from GET /proxies.
-/// </summary>
+/// <summary>Response shape from GET /proxies.</summary>
 public sealed class ProxiesResponse
 {
     [JsonPropertyName("proxies")]
     public Dictionary<string, ProxiesEntry> Proxies { get; set; } = new();
 }
 
-/// <summary>
-/// Individual entry in the /proxies map (may be a group or a leaf node).
-/// </summary>
+/// <summary>Individual entry in the /proxies map.</summary>
 public sealed class ProxiesEntry
 {
     [JsonPropertyName("name")]
@@ -208,9 +243,7 @@ public sealed class ProxyHistoryEntry
     public int Delay { get; set; }
 }
 
-/// <summary>
-/// Response from GET /proxies/{name}/delay.
-/// </summary>
+/// <summary>Response from GET /proxies/{name}/delay.</summary>
 public sealed class DelayResponse
 {
     [JsonPropertyName("delay")]

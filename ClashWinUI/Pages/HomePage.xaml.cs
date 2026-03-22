@@ -1,9 +1,338 @@
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using ClashWinUI.Helpers;
+using ClashWinUI.Services;
 
 namespace ClashWinUI.Pages;
 
-public sealed partial class HomePage : Page
+public sealed partial class HomePage : Page, INotifyPropertyChanged
 {
-    public string PageTitle => Strings.Nav_Home;
-    public HomePage() => InitializeComponent();
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    // ── Brushes ───────────────────────────────────────────────────────────────
+
+    private readonly SolidColorBrush _greenBrush = new(Windows.UI.Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50));
+    private readonly SolidColorBrush _greyBrush  = new(Windows.UI.Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E));
+
+    // ── Bindable labels ───────────────────────────────────────────────────────
+
+    public string PageTitle             => Strings.Nav_Home;
+    public string ActiveSubscriptionLabel => Strings.Home_ActiveSubscription;
+    public string NetworkModeLabel      => Strings.Home_NetworkMode;
+    public string SystemProxyLabel      => Strings.Home_SystemProxy;
+    public string SystemProxyDescLabel  => Strings.Home_SystemProxy_Description;
+    public string TunModeLabel          => Strings.Home_TunMode;
+    public string TunModeDescLabel      => Strings.Home_TunMode_Description;
+    public string ProxyModeLabel        => Strings.Home_ProxyMode;
+    public string CurrentNodeLabel      => Strings.Home_CurrentNode;
+    public string ModeRuleLabel         => Strings.Proxy_Mode_Rule;
+    public string ModeGlobalLabel       => Strings.Proxy_Mode_Global;
+    public string ModeDirectLabel       => Strings.Proxy_Mode_Direct;
+
+    // ── Core state ────────────────────────────────────────────────────────────
+
+    public bool IsRunning => MihomoService.Instance.IsRunning;
+
+    public SolidColorBrush CoreDotBrush  => IsRunning ? _greenBrush : _greyBrush;
+    public string CoreStatusText         => IsRunning ? Strings.Core_Running : Strings.Core_Stopped;
+    public string CoreButtonLabel        => IsRunning ? Strings.Core_Stop : Strings.Core_Start;
+
+    private bool _isBusy;
+    public bool IsBusy           => _isBusy;
+    public bool IsNotBusy        => !_isBusy;
+    public Visibility BusyVisibility => _isBusy ? Visibility.Visible : Visibility.Collapsed;
+
+    // ── Start error ───────────────────────────────────────────────────────────
+
+    private string _startErrorMessage = string.Empty;
+    public string StartErrorMessage
+    {
+        get => _startErrorMessage;
+        private set { _startErrorMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasStartError)); }
+    }
+    public bool HasStartError => !string.IsNullOrEmpty(_startErrorMessage);
+
+    // ── Subscription ──────────────────────────────────────────────────────────
+
+    private string _subscriptionName = "—";
+    public string SubscriptionName
+    {
+        get => _subscriptionName;
+        private set { _subscriptionName = value; OnPropertyChanged(); }
+    }
+
+    private string _subscriptionTypeLabel = string.Empty;
+    public string SubscriptionTypeLabel
+    {
+        get => _subscriptionTypeLabel;
+        private set { _subscriptionTypeLabel = value; OnPropertyChanged(); }
+    }
+
+    // ── Network mode ──────────────────────────────────────────────────────────
+
+    // Guard flag: set while programmatically updating toggle bindings so the
+    // Toggled event (which fires on programmatic changes too) is ignored.
+    private bool _settingToggles;
+
+    private bool _isSystemProxyEnabled;
+    public bool IsSystemProxyEnabled
+    {
+        get => _isSystemProxyEnabled;
+        private set
+        {
+            if (_isSystemProxyEnabled == value) return;
+            _isSystemProxyEnabled = value;
+            _settingToggles = true;
+            OnPropertyChanged();
+            _settingToggles = false;
+        }
+    }
+
+    private bool _isTunEnabled;
+    public bool IsTunEnabled
+    {
+        get => _isTunEnabled;
+        private set
+        {
+            if (_isTunEnabled == value) return;
+            _isTunEnabled = value;
+            _settingToggles = true;
+            OnPropertyChanged();
+            _settingToggles = false;
+        }
+    }
+
+    // ── Proxy mode ────────────────────────────────────────────────────────────
+
+    private string _currentMode = "rule";
+    public bool IsModeRule   => _currentMode == "rule";
+    public bool IsModeGlobal => _currentMode == "global";
+    public bool IsModeDirect => _currentMode == "direct";
+
+    private void SetMode(string mode)
+    {
+        _currentMode = mode;
+        OnPropertyChanged(nameof(IsModeRule));
+        OnPropertyChanged(nameof(IsModeGlobal));
+        OnPropertyChanged(nameof(IsModeDirect));
+    }
+
+    // ── Current node ──────────────────────────────────────────────────────────
+
+    private string _currentNodeName = "—";
+    public string CurrentNodeName
+    {
+        get => _currentNodeName;
+        private set { _currentNodeName = value; OnPropertyChanged(); }
+    }
+
+    private string _currentNodeGroup = string.Empty;
+    public string CurrentNodeGroup
+    {
+        get => _currentNodeGroup;
+        private set { _currentNodeGroup = value; OnPropertyChanged(); }
+    }
+
+    // ── Proxy port (cached for system-proxy enable) ───────────────────────────
+
+    private int _proxyPort = 7890;
+
+    // ── Infrastructure ────────────────────────────────────────────────────────
+
+    private readonly DispatcherQueue _dq;
+
+    public HomePage()
+    {
+        InitializeComponent();
+        _dq = DispatcherQueue.GetForCurrentThread();
+        Loaded += OnLoaded;
+        MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        await SubscriptionService.Instance.LoadAsync();
+        RefreshSubscriptionInfo();
+        IsSystemProxyEnabled = SystemProxyHelper.IsEnabled();
+        if (IsRunning)
+            await RefreshCoreInfoAsync();
+    }
+
+    private void OnRunningStateChanged(object? sender, EventArgs e)
+    {
+        _dq.TryEnqueue(async () =>
+        {
+            NotifyCoreState();
+            if (IsRunning)
+                await RefreshCoreInfoAsync();
+            else
+            {
+                IsTunEnabled = false;
+                CurrentNodeName = "—";
+                CurrentNodeGroup = string.Empty;
+            }
+        });
+    }
+
+    private void NotifyCoreState()
+    {
+        OnPropertyChanged(nameof(IsRunning));
+        OnPropertyChanged(nameof(CoreDotBrush));
+        OnPropertyChanged(nameof(CoreStatusText));
+        OnPropertyChanged(nameof(CoreButtonLabel));
+    }
+
+    // ── Data refresh ──────────────────────────────────────────────────────────
+
+    private void RefreshSubscriptionInfo()
+    {
+        foreach (var item in SubscriptionService.Instance.Items)
+        {
+            bool hasConfig =
+                (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) && File.Exists(item.UrlOrPath))
+                || (item.IsRemote && !string.IsNullOrEmpty(item.CachedConfigPath) && File.Exists(item.CachedConfigPath));
+            if (hasConfig)
+            {
+                SubscriptionName = item.Name;
+                SubscriptionTypeLabel = item.TypeLabel;
+                return;
+            }
+        }
+        SubscriptionName = Strings.Home_NoSubscription;
+        SubscriptionTypeLabel = string.Empty;
+    }
+
+    private async Task RefreshCoreInfoAsync()
+    {
+        try
+        {
+            var config = await MihomoService.Instance.GetConfigAsync();
+            if (config != null)
+            {
+                SetMode(config.Mode);
+                IsTunEnabled = config.Tun?.Enable ?? false;
+                _proxyPort = config.MixedPort > 0 ? config.MixedPort
+                           : config.Port > 0 ? config.Port
+                           : 7890;
+            }
+
+            var (group, node) = await MihomoService.Instance.GetCurrentProxyAsync();
+            CurrentNodeName  = string.IsNullOrEmpty(node) ? "—" : node;
+            CurrentNodeGroup = group;
+        }
+        catch { }
+    }
+
+    // ── Button handlers ───────────────────────────────────────────────────────
+
+    private async void CoreToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isBusy) return;
+        SetBusy(true);
+        StartErrorMessage = string.Empty;
+        try
+        {
+            if (IsRunning)
+            {
+                await MihomoService.Instance.StopAsync();
+            }
+            else
+            {
+                await SubscriptionService.Instance.LoadAsync();
+                string? configPath = null;
+                foreach (var item in SubscriptionService.Instance.Items)
+                {
+                    if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) && File.Exists(item.UrlOrPath))
+                    { configPath = item.UrlOrPath; break; }
+                    if (item.IsRemote && !string.IsNullOrEmpty(item.CachedConfigPath) && File.Exists(item.CachedConfigPath))
+                    { configPath = item.CachedConfigPath; break; }
+                }
+                if (configPath == null)
+                {
+                    StartErrorMessage = Strings.Subscription_NoCacheHint;
+                    return;
+                }
+                await MihomoService.Instance.StartAsync(9090, string.Empty, configPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            StartErrorMessage = ex.Message;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _isBusy = busy;
+        OnPropertyChanged(nameof(IsBusy));
+        OnPropertyChanged(nameof(IsNotBusy));
+        OnPropertyChanged(nameof(BusyVisibility));
+    }
+
+    private void SystemProxy_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_settingToggles) return;
+        var toggle = (ToggleSwitch)sender;
+        if (toggle.IsOn)
+        {
+            SystemProxyHelper.Enable(_proxyPort);
+            _isSystemProxyEnabled = true;
+        }
+        else
+        {
+            SystemProxyHelper.Disable();
+            _isSystemProxyEnabled = false;
+        }
+    }
+
+    private async void TunMode_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_settingToggles) return;
+        if (!IsRunning) { IsTunEnabled = false; return; }
+        var toggle = (ToggleSwitch)sender;
+        var desired = toggle.IsOn;
+        var ok = await MihomoService.Instance.SetTunAsync(desired);
+        if (ok)
+            _isTunEnabled = desired; // sync backing field; switch already shows correct state
+        else
+            IsTunEnabled = !desired; // revert on failure
+    }
+
+    private async void ModeRule_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsRunning) return;
+        await MihomoService.Instance.SetModeAsync("rule");
+        _currentMode = "rule";
+    }
+
+    private async void ModeGlobal_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsRunning) return;
+        await MihomoService.Instance.SetModeAsync("global");
+        _currentMode = "global";
+    }
+
+    private async void ModeDirect_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsRunning) return;
+        await MihomoService.Instance.SetModeAsync("direct");
+        _currentMode = "direct";
+    }
+
+    private void ErrorBar_Closed(InfoBar sender, InfoBarClosedEventArgs args) =>
+        StartErrorMessage = string.Empty;
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

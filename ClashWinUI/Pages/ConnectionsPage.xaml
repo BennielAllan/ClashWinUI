@@ -141,21 +141,21 @@
                                 <!-- Main info -->
                                 <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                                     <TextBlock
-                                        Text="{x:Bind HostDisplay, Mode=OneWay}"
+                                        Text="{x:Bind HostDisplay, Mode=OneTime}"
                                         Style="{StaticResource BodyStrongTextBlockStyle}"
                                         FontSize="13"
                                         TextTrimming="CharacterEllipsis" />
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <TextBlock
-                                            Text="{x:Bind NetworkLabel, Mode=OneWay}"
+                                            Text="{x:Bind NetworkLabel, Mode=OneTime}"
                                             FontSize="11"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                         <TextBlock
-                                            Text="{x:Bind Rule, Mode=OneWay}"
+                                            Text="{x:Bind Rule, Mode=OneTime}"
                                             FontSize="11"
                                             Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
                                         <TextBlock
-                                            Text="{x:Bind ChainDisplay, Mode=OneWay}"
+                                            Text="{x:Bind ChainDisplay, Mode=OneTime}"
                                             FontSize="11"
                                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                             TextTrimming="CharacterEllipsis" />

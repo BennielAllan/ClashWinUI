@@ -20,6 +20,7 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
     private long? _totalBytes;
     private bool _isRefreshing;
     private int _updateIntervalMinutes;
+    private string? _cachedConfigPath;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -127,6 +128,13 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
     {
         get => _updateIntervalMinutes;
         set => SetField(ref _updateIntervalMinutes, value);
+    }
+
+    /// <summary>Local cache path for a downloaded remote subscription YAML. Persisted.</summary>
+    public string? CachedConfigPath
+    {
+        get => _cachedConfigPath;
+        set => SetField(ref _cachedConfigPath, value);
     }
 
     /// <summary>Progress 0.0–1.0 for usage/total; 0 when no total.</summary>

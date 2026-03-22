@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Microsoft.UI.Xaml;
 using ClashWinUI.Helpers;
 using ClashWinUI.Services;
@@ -21,11 +22,40 @@ public partial class App : Application
         Helpers.WindowHelper.TrackWindow(MainWindow);
         MainWindow.Activate();
         MainWindow.Closed += OnMainWindowClosed;
+        AutoStartCoreAsync();
+    }
+
+    private static async void AutoStartCoreAsync()
+    {
+        if (MihomoService.Instance.IsRunning) return;
+
+        await SubscriptionService.Instance.LoadAsync();
+
+        string? configPath = null;
+        foreach (var item in SubscriptionService.Instance.Items)
+        {
+            if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) &&
+                File.Exists(item.UrlOrPath))
+            {
+                configPath = item.UrlOrPath;
+                break;
+            }
+            if (item.IsRemote && !string.IsNullOrEmpty(item.CachedConfigPath) &&
+                File.Exists(item.CachedConfigPath))
+            {
+                configPath = item.CachedConfigPath;
+                break;
+            }
+        }
+
+        if (configPath == null) return;
+
+        try { await MihomoService.Instance.StartAsync(9090, string.Empty, configPath); }
+        catch { /* 自动启动失败时静默忽略，用户可手动在订阅页启动 */ }
     }
 
     private async void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
-        // Ensure the mihomo core process is stopped when the app exits.
         if (MihomoService.Instance.IsRunning)
             await MihomoService.Instance.StopAsync();
     }

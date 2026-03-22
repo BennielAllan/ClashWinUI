@@ -89,6 +89,15 @@
                 IsClosable="False"
                 VerticalAlignment="Top" />
 
+            <!-- Load error banner -->
+            <InfoBar
+                IsOpen="{x:Bind HasLoadError, Mode=OneWay}"
+                Severity="Error"
+                Title="{x:Bind LoadError, Mode=OneWay}"
+                Margin="24,8,24,0"
+                IsClosable="False"
+                VerticalAlignment="Top" />
+
             <!-- Loading spinner -->
             <ProgressRing
                 IsActive="{x:Bind IsLoading, Mode=OneWay}"
@@ -131,23 +140,18 @@
                                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <TextBlock
-                                                    Text="{x:Bind Name, Mode=OneWay}"
+                                                    Text="{x:Bind Name, Mode=OneTime}"
                                                     Style="{StaticResource BodyStrongTextBlockStyle}" />
                                                 <Border
                                                     Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                                                     CornerRadius="4" Padding="6,2"
                                                     VerticalAlignment="Center">
                                                     <TextBlock
-                                                        Text="{x:Bind TypeLabel, Mode=OneWay}"
+                                                        Text="{x:Bind TypeLabel, Mode=OneTime}"
                                                         FontSize="11"
                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                                 </Border>
                                             </StackPanel>
-                                            <TextBlock
-                                                Text="{x:Bind Now, Mode=OneWay}"
-                                                FontSize="12"
-                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
 
                                         <!-- Testing ring -->
@@ -189,53 +193,68 @@
 
                                     <!-- Nodes list (visible when expanded) -->
                                     <ItemsRepeater
-                                        ItemsSource="{x:Bind Nodes, Mode=OneWay}"
+                                        ItemsSource="{x:Bind NodeViews, Mode=OneWay}"
                                         Visibility="{x:Bind ExpandedVisibility, Mode=OneWay}"
                                         Margin="0,0,0,8">
                                         <ItemsRepeater.Layout>
                                             <StackLayout Spacing="0" />
                                         </ItemsRepeater.Layout>
                                         <ItemsRepeater.ItemTemplate>
-                                            <DataTemplate x:DataType="models:ProxyNode">
-                                                <Grid
+                                            <DataTemplate x:DataType="models:ProxyNodeView">
+                                                <Button
                                                     Tag="{x:Bind}"
-                                                    Padding="40,6,16,6"
-                                                    ColumnSpacing="8"
-                                                    PointerPressed="Node_PointerPressed">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="16,6,16,6"
+                                                    Click="Node_Click">
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="24" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
 
-                                                    <TextBlock
-                                                        Grid.Column="0"
-                                                        Text="{x:Bind Name, Mode=OneWay}"
-                                                        Style="{StaticResource BodyTextBlockStyle}"
-                                                        TextTrimming="CharacterEllipsis"
-                                                        VerticalAlignment="Center" />
+                                                        <!-- Selected indicator dot -->
+                                                        <Ellipse
+                                                            Grid.Column="0"
+                                                            Width="6" Height="6"
+                                                            Fill="{ThemeResource AccentFillColorDefaultBrush}"
+                                                            Visibility="{x:Bind SelectedDotVisibility, Mode=OneWay}"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
 
-                                                    <!-- Testing ring -->
-                                                    <ProgressRing
-                                                        Grid.Column="1"
-                                                        IsActive="{x:Bind IsTesting, Mode=OneWay}"
-                                                        Visibility="{x:Bind TestingVisibility, Mode=OneWay}"
-                                                        Width="14" Height="14"
-                                                        VerticalAlignment="Center" />
-
-                                                    <!-- Delay badge -->
-                                                    <Border
-                                                        Grid.Column="2"
-                                                        CornerRadius="4"
-                                                        Padding="6,2"
-                                                        Visibility="{x:Bind DelayVisibility, Mode=OneWay}"
-                                                        VerticalAlignment="Center">
                                                         <TextBlock
-                                                            Text="{x:Bind DelayDisplay, Mode=OneWay}"
-                                                            FontSize="11"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                    </Border>
-                                                </Grid>
+                                                            Grid.Column="1"
+                                                            Text="{x:Bind Name, Mode=OneTime}"
+                                                            Style="{StaticResource BodyTextBlockStyle}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            VerticalAlignment="Center" />
+
+                                                        <!-- Testing ring -->
+                                                        <ProgressRing
+                                                            Grid.Column="2"
+                                                            IsActive="{x:Bind IsTesting, Mode=OneWay}"
+                                                            Visibility="{x:Bind TestingVisibility, Mode=OneWay}"
+                                                            Width="14" Height="14"
+                                                            VerticalAlignment="Center" />
+
+                                                        <!-- Delay badge -->
+                                                        <Border
+                                                            Grid.Column="3"
+                                                            CornerRadius="4"
+                                                            Padding="6,2"
+                                                            Visibility="{x:Bind DelayVisibility, Mode=OneWay}"
+                                                            VerticalAlignment="Center">
+                                                            <TextBlock
+                                                                Text="{x:Bind DelayDisplay, Mode=OneWay}"
+                                                                FontSize="11"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        </Border>
+                                                    </Grid>
+                                                </Button>
                                             </DataTemplate>
                                         </ItemsRepeater.ItemTemplate>
                                     </ItemsRepeater>
