@@ -1,18 +1,24 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Windows.System;
+using Windows.UI;
 using ClashWinUI.Helpers;
 using ClashWinUI.Models;
 using ClashWinUI.Services;
 
 namespace ClashWinUI.Pages;
 
-public sealed partial class SubscriptionPage : Page
+public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     public string PageTitle => Strings.Nav_Subscription;
     public string Subscription_Import => Strings.Subscription_Import;
     public string Subscription_New => Strings.Subscription_New;
@@ -21,6 +27,32 @@ public sealed partial class SubscriptionPage : Page
     public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
     public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
 
+    // ── Core status ───────────────────────────────────────────────────────────
+
+    public string CoreStatusLabel => MihomoService.Instance.IsRunning ? Strings.Core_Running : Strings.Core_Stopped;
+
+    public Brush CoreStatusColor => MihomoService.Instance.IsRunning
+        ? new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50)) // green
+        : new SolidColorBrush(Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E)); // grey
+
+    public string CoreToggleLabel => MihomoService.Instance.IsRunning ? Strings.Core_Stop : Strings.Core_Start;
+
+    private bool _coreIsTransitioning;
+    public bool IsCoreToggleEnabled => !_coreIsTransitioning;
+
+    private void RefreshCoreState()
+    {
+        OnPropertyChanged(nameof(CoreStatusLabel));
+        OnPropertyChanged(nameof(CoreStatusColor));
+        OnPropertyChanged(nameof(CoreToggleLabel));
+        OnPropertyChanged(nameof(IsCoreToggleEnabled));
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    // ────────────────────────────────────────────────────────────────────────
+
     public ObservableCollection<SubscriptionItem> SubscriptionItems => SubscriptionService.Instance.Items;
 
     public SubscriptionPage()
@@ -28,12 +60,14 @@ public sealed partial class SubscriptionPage : Page
         InitializeComponent();
         Loaded += OnLoaded;
         SubscriptionService.Instance.Items.CollectionChanged += (_, _) => UpdateEmptyState();
+        MihomoService.Instance.RunningStateChanged += (_, _) => RefreshCoreState();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
+        RefreshCoreState();
     }
 
     private void UpdateEmptyState()
@@ -336,5 +370,55 @@ public sealed partial class SubscriptionPage : Page
         }
         if (upload.HasValue && download.HasValue) item.UsageBytes = upload.Value + download.Value;
         if (total.HasValue) item.TotalBytes = total.Value;
+    }
+
+    // ── Core start/stop ───────────────────────────────────────────────────────
+
+    private async void CoreToggle_Click(object sender, RoutedEventArgs e)
+    {
+        _coreIsTransitioning = true;
+        OnPropertyChanged(nameof(IsCoreToggleEnabled));
+        try
+        {
+            if (MihomoService.Instance.IsRunning)
+            {
+                await MihomoService.Instance.StopAsync();
+            }
+            else
+            {
+                // Find the first local subscription file to use as config.
+                string? configPath = null;
+                foreach (var item in SubscriptionItems)
+                {
+                    if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) &&
+                        System.IO.File.Exists(item.UrlOrPath))
+                    {
+                        configPath = item.UrlOrPath;
+                        break;
+                    }
+                }
+
+                try
+                {
+                    await MihomoService.Instance.StartAsync(9090, string.Empty, configPath);
+                }
+                catch (Exception ex)
+                {
+                    var dlg = new ContentDialog
+                    {
+                        XamlRoot = XamlRoot,
+                        Title = Strings.Core_StartFailed,
+                        Content = ex.Message,
+                        CloseButtonText = Strings.Common_Ok
+                    };
+                    await dlg.ShowAsync();
+                }
+            }
+        }
+        finally
+        {
+            _coreIsTransitioning = false;
+            RefreshCoreState();
+        }
     }
 }

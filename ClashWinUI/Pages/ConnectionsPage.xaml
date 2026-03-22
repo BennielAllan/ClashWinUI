@@ -1,12 +1,230 @@
 <Page
     x:Class="ClashWinUI.Pages.ConnectionsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:ClashWinUI.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource LayerFillColorDefaultBrush}">
+
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
         <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="18"
+            Grid.Row="0"
+            Margin="36,24,36,0"
+            AutomationProperties.HeadingLevel="Level1"
+            Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
+
+        <!-- Stats bar -->
+        <Grid Grid.Row="1" Margin="24,12,24,0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Download total -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE896;"
+                    FontSize="14"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <StackPanel Spacing="0">
+                    <TextBlock
+                        Text="{x:Bind TotalDownLabel, Mode=OneWay}"
+                        FontSize="10"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock
+                        Text="{x:Bind TotalDownDisplay, Mode=OneWay}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        FontSize="13" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Upload total -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE898;"
+                    FontSize="14"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <StackPanel Spacing="0">
+                    <TextBlock
+                        Text="{x:Bind TotalUpLabel, Mode=OneWay}"
+                        FontSize="10"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock
+                        Text="{x:Bind TotalUpDisplay, Mode=OneWay}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        FontSize="13" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Toolbar: search + close all -->
+        <Grid Grid.Row="2" Margin="24,8,24,0" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <AutoSuggestBox
+                Grid.Column="0"
+                x:Name="SearchBox"
+                PlaceholderText="{x:Bind SearchPlaceholder, Mode=OneWay}"
+                QueryIcon="Find"
+                VerticalAlignment="Center"
+                TextChanged="SearchBox_TextChanged" />
+
+            <Button
+                Grid.Column="1"
+                Content="{x:Bind CloseAllLabel, Mode=OneWay}"
+                Click="CloseAll_Click"
+                Padding="12,6"
+                IsEnabled="{x:Bind HasConnections, Mode=OneWay}" />
+        </Grid>
+
+        <!-- Content area -->
+        <Grid Grid.Row="3">
+
+            <!-- Not running banner -->
+            <InfoBar
+                IsOpen="{x:Bind IsNotRunning, Mode=OneWay}"
+                Severity="Warning"
+                Title="{x:Bind NotRunningMessage, Mode=OneWay}"
+                Margin="24,8,24,0"
+                IsClosable="False"
+                VerticalAlignment="Top" />
+
+            <!-- Connection list -->
+            <ListView
+                x:Name="ConnectionListView"
+                Margin="24,8,24,8"
+                Visibility="{x:Bind ListVisibility, Mode=OneWay}"
+                ItemsSource="{x:Bind FilteredConnections, Mode=OneWay}"
+                SelectionMode="None"
+                IsItemClickEnabled="False">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="MinHeight" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ConnectionItem">
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            Margin="0,2">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Main info -->
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock
+                                        Text="{x:Bind HostDisplay, Mode=OneWay}"
+                                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                                        FontSize="13"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock
+                                            Text="{x:Bind NetworkLabel, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock
+                                            Text="{x:Bind Rule, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                        <TextBlock
+                                            Text="{x:Bind ChainDisplay, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Rates -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2" MinWidth="80">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon
+                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                            Glyph="&#xE896;"
+                                            FontSize="10"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock
+                                            Text="{x:Bind DownloadRateDisplay, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon
+                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                            Glyph="&#xE898;"
+                                            FontSize="10"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock
+                                            Text="{x:Bind UploadRateDisplay, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Close button -->
+                                <Button
+                                    Grid.Column="2"
+                                    Tag="{x:Bind}"
+                                    Style="{StaticResource TransparentIconButtonStyle}"
+                                    Click="CloseConnection_Click"
+                                    Width="28" Height="28"
+                                    VerticalAlignment="Center">
+                                    <FontIcon
+                                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                        Glyph="&#xE711;"
+                                        FontSize="11" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!-- Empty state -->
+            <StackPanel
+                Visibility="{x:Bind EmptyVisibility, Mode=OneWay}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="12">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE12B;"
+                    FontSize="48"
+                    HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind EmptyMessage, Mode=OneWay}"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

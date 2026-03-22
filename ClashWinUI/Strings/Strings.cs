@@ -67,4 +67,54 @@ public static class Strings
     // Language display names (for language selector)
     public static string Language_English => "English";
     public static string Language_Chinese => "中文";
+
+    // Proxy page
+    public static string Proxy_Mode => IsZh ? "代理模式" : "Mode";
+    public static string Proxy_Mode_Rule => IsZh ? "规则" : "Rule";
+    public static string Proxy_Mode_Global => IsZh ? "全局" : "Global";
+    public static string Proxy_Mode_Direct => IsZh ? "直连" : "Direct";
+    public static string Proxy_TestAll => IsZh ? "全部测速" : "Test All";
+    public static string Proxy_TestGroup => IsZh ? "测速" : "Test";
+    public static string Proxy_Latency => IsZh ? "延迟" : "Latency";
+    public static string Proxy_NotRunning => IsZh ? "内核未运行，请先在订阅页面启动内核。" : "Core is not running. Please start the core from the Subscription page.";
+    public static string Proxy_Loading => IsZh ? "正在加载代理组…" : "Loading proxy groups…";
+    public static string Proxy_NoGroups => IsZh ? "没有可用的代理组" : "No proxy groups available";
+    public static string Proxy_SelectNode => IsZh ? "选择节点" : "Select node";
+
+    // Logs page
+    public static string Logs_Level_All => IsZh ? "全部" : "All";
+    public static string Logs_Level_Debug => "Debug";
+    public static string Logs_Level_Info => "Info";
+    public static string Logs_Level_Warn => "Warn";
+    public static string Logs_Level_Error => "Error";
+    public static string Logs_Pause => IsZh ? "暂停" : "Pause";
+    public static string Logs_Resume => IsZh ? "继续" : "Resume";
+    public static string Logs_Clear => IsZh ? "清空" : "Clear";
+    public static string Logs_Search => IsZh ? "搜索日志…" : "Search logs…";
+    public static string Logs_NotRunning => IsZh ? "内核未运行" : "Core is not running";
+    public static string Logs_Empty => IsZh ? "暂无日志" : "No logs yet";
+
+    // Connections page
+    public static string Connections_Total_Down => IsZh ? "总下载" : "Total Down";
+    public static string Connections_Total_Up => IsZh ? "总上传" : "Total Up";
+    public static string Connections_CloseAll => IsZh ? "关闭全部" : "Close All";
+    public static string Connections_CloseAllConfirm => IsZh ? "确定关闭全部连接？" : "Close all connections?";
+    public static string Connections_Search => IsZh ? "搜索连接…" : "Search connections…";
+    public static string Connections_Empty => IsZh ? "暂无活跃连接" : "No active connections";
+    public static string Connections_NotRunning => IsZh ? "内核未运行" : "Core is not running";
+    public static string Connections_Rule => IsZh ? "规则" : "Rule";
+    public static string Connections_Chain => IsZh ? "链路" : "Chain";
+
+    // Core / Mihomo
+    public static string Core_Start => IsZh ? "启动内核" : "Start Core";
+    public static string Core_Stop => IsZh ? "停止内核" : "Stop Core";
+    public static string Core_Running => IsZh ? "运行中" : "Running";
+    public static string Core_Stopped => IsZh ? "未运行" : "Stopped";
+    public static string Core_StartFailed => IsZh ? "内核启动失败" : "Failed to start core";
+
+    // Common
+    public static string Common_Refresh => IsZh ? "刷新" : "Refresh";
+    public static string Common_Close => IsZh ? "关闭" : "Close";
+    public static string Common_Search => IsZh ? "搜索…" : "Search…";
+    public static string Common_Loading => IsZh ? "加载中…" : "Loading…";
 }

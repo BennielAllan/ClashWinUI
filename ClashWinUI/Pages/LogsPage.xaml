@@ -1,12 +1,179 @@
 <Page
     x:Class="ClashWinUI.Pages.LogsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:ClashWinUI.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource LayerFillColorDefaultBrush}">
+
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
         <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            FontSize="18"
+            Grid.Row="0"
+            Margin="36,24,36,0"
+            AutomationProperties.HeadingLevel="Level1"
+            Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="1" Margin="24,8,24,0" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Search box -->
+            <AutoSuggestBox
+                Grid.Column="0"
+                x:Name="SearchBox"
+                PlaceholderText="{x:Bind SearchPlaceholder, Mode=OneWay}"
+                QueryIcon="Find"
+                VerticalAlignment="Center"
+                TextChanged="SearchBox_TextChanged" />
+
+            <!-- Level filter -->
+            <ComboBox
+                Grid.Column="1"
+                x:Name="LevelCombo"
+                SelectedIndex="0"
+                MinWidth="90"
+                VerticalAlignment="Center"
+                SelectionChanged="LevelCombo_SelectionChanged">
+                <ComboBoxItem Content="All" Tag="debug" />
+                <ComboBoxItem Content="Debug" Tag="debug" />
+                <ComboBoxItem Content="Info" Tag="info" />
+                <ComboBoxItem Content="Warn" Tag="warning" />
+                <ComboBoxItem Content="Error" Tag="error" />
+            </ComboBox>
+
+            <!-- Pause/Resume -->
+            <Button
+                Grid.Column="2"
+                Style="{StaticResource TransparentIconButtonStyle}"
+                ToolTipService.ToolTip="{x:Bind PauseResumeTooltip, Mode=OneWay}"
+                Click="PauseResume_Click"
+                Width="36" Height="36">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="{x:Bind PauseResumeGlyph, Mode=OneWay}"
+                    FontSize="14" />
+            </Button>
+
+            <!-- Clear -->
+            <Button
+                Grid.Column="3"
+                Style="{StaticResource TransparentIconButtonStyle}"
+                ToolTipService.ToolTip="{x:Bind ClearLabel, Mode=OneWay}"
+                Click="Clear_Click"
+                Width="36" Height="36">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE894;"
+                    FontSize="14" />
+            </Button>
+        </Grid>
+
+        <!-- Content -->
+        <Grid Grid.Row="2">
+            <!-- Not running banner -->
+            <InfoBar
+                IsOpen="{x:Bind IsNotRunning, Mode=OneWay}"
+                Severity="Warning"
+                Title="{x:Bind NotRunningMessage, Mode=OneWay}"
+                Margin="24,8,24,0"
+                IsClosable="False"
+                VerticalAlignment="Top" />
+
+            <!-- Log list -->
+            <ListView
+                x:Name="LogListView"
+                Margin="24,8,24,8"
+                Visibility="{x:Bind ListVisibility, Mode=OneWay}"
+                ItemsSource="{x:Bind FilteredLogs, Mode=OneWay}"
+                SelectionMode="None"
+                IsItemClickEnabled="False">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="MinHeight" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:LogItem">
+                        <Grid Padding="4,2" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="64" />
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Time -->
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="{x:Bind TimeDisplay, Mode=OneWay}"
+                                FontSize="11"
+                                FontFamily="Consolas"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                VerticalAlignment="Center" />
+
+                            <!-- Level badge -->
+                            <Border
+                                Grid.Column="1"
+                                CornerRadius="3"
+                                Padding="4,1"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left">
+                                <TextBlock
+                                    Text="{x:Bind LevelDisplay, Mode=OneWay}"
+                                    FontSize="10"
+                                    FontFamily="Consolas"
+                                    FontWeight="SemiBold" />
+                            </Border>
+
+                            <!-- Message -->
+                            <TextBlock
+                                Grid.Column="2"
+                                Text="{x:Bind Payload, Mode=OneWay}"
+                                FontSize="12"
+                                FontFamily="Consolas"
+                                TextWrapping="Wrap"
+                                VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!-- Empty state -->
+            <StackPanel
+                Visibility="{x:Bind EmptyVisibility, Mode=OneWay}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="12">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE8A5;"
+                    FontSize="48"
+                    HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock
+                    Text="{x:Bind EmptyMessage, Mode=OneWay}"
+                    Style="{StaticResource BodyTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

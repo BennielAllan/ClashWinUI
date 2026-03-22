@@ -24,30 +24,59 @@
             Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
 
-        <!-- Command bar -->
-        <CommandBar
-            Grid.Row="1"
-            Margin="24,4,24,0"
-            HorizontalAlignment="Left"
-            DefaultLabelPosition="Right"
-            Background="Transparent">
-            <AppBarButton
-                x:Name="ImportButton"
-                Label="{x:Bind Subscription_Import, Mode=OneWay}"
-                Click="ImportButton_Click">
-                <AppBarButton.Icon>
-                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton
-                x:Name="NewButton"
-                Label="{x:Bind Subscription_New, Mode=OneWay}"
-                Click="NewButton_Click">
-                <AppBarButton.Icon>
-                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE710;" />
-                </AppBarButton.Icon>
-            </AppBarButton>
-        </CommandBar>
+        <!-- Command bar + core status -->
+        <Grid Grid.Row="1" Margin="24,4,24,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <CommandBar
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                DefaultLabelPosition="Right"
+                Background="Transparent">
+                <AppBarButton
+                    x:Name="ImportButton"
+                    Label="{x:Bind Subscription_Import, Mode=OneWay}"
+                    Click="ImportButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton
+                    x:Name="NewButton"
+                    Label="{x:Bind Subscription_New, Mode=OneWay}"
+                    Click="NewButton_Click">
+                    <AppBarButton.Icon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE710;" />
+                    </AppBarButton.Icon>
+                </AppBarButton>
+            </CommandBar>
+
+            <!-- Core status + toggle button -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <!-- Status dot + label -->
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Ellipse
+                        Width="8" Height="8"
+                        Fill="{x:Bind CoreStatusColor, Mode=OneWay}"
+                        VerticalAlignment="Center" />
+                    <TextBlock
+                        Text="{x:Bind CoreStatusLabel, Mode=OneWay}"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Start / Stop button -->
+                <Button
+                    Content="{x:Bind CoreToggleLabel, Mode=OneWay}"
+                    Click="CoreToggle_Click"
+                    IsEnabled="{x:Bind IsCoreToggleEnabled, Mode=OneWay}"
+                    Padding="12,6" />
+            </StackPanel>
+        </Grid>
 
         <!-- Content area -->
         <Grid Grid.Row="2">
