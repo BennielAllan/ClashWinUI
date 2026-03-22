@@ -23,53 +23,38 @@
             Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
 
-        <!-- Command bar: mode selector + refresh + test all -->
+        <!-- Command bar: refresh + test all -->
         <Grid Grid.Row="1" Margin="24,8,24,0" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Proxy mode radio group -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <RadioButton
-                    x:Name="ModeRuleBtn"
-                    Content="{x:Bind ModeRuleLabel, Mode=OneWay}"
-                    GroupName="ProxyMode"
-                    IsChecked="{x:Bind IsModeRule, Mode=OneWay}"
-                    Checked="ModeRule_Checked" />
-                <RadioButton
-                    x:Name="ModeGlobalBtn"
-                    Content="{x:Bind ModeGlobalLabel, Mode=OneWay}"
-                    GroupName="ProxyMode"
-                    IsChecked="{x:Bind IsModeGlobal, Mode=OneWay}"
-                    Checked="ModeGlobal_Checked" />
-                <RadioButton
-                    x:Name="ModeDirectBtn"
-                    Content="{x:Bind ModeDirectLabel, Mode=OneWay}"
-                    GroupName="ProxyMode"
-                    IsChecked="{x:Bind IsModeDirect, Mode=OneWay}"
-                    Checked="ModeDirect_Checked" />
-            </StackPanel>
-
             <!-- Refresh -->
-            <Button
-                Grid.Column="2"
-                Style="{StaticResource TransparentIconButtonStyle}"
-                ToolTipService.ToolTip="{x:Bind RefreshLabel, Mode=OneWay}"
-                Click="RefreshButton_Click"
-                Width="36" Height="36">
-                <FontIcon
-                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                    Glyph="&#xE72C;"
-                    FontSize="14" />
-            </Button>
+            <Grid Grid.Column="1" Width="36" Height="36">
+                <ProgressRing
+                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
+                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
+                    Width="16" Height="16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+                <Button
+                    Style="{StaticResource TransparentIconButtonStyle}"
+                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind RefreshLabel, Mode=OneWay}"
+                    Click="RefreshButton_Click"
+                    Width="36" Height="36">
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        Glyph="&#xE72C;"
+                        FontSize="14" />
+                </Button>
+            </Grid>
 
             <!-- Test All -->
             <Button
-                Grid.Column="3"
+                Grid.Column="2"
                 Content="{x:Bind TestAllLabel, Mode=OneWay}"
                 Style="{StaticResource AccentButtonStyle}"
                 Click="TestAllButton_Click"
@@ -121,18 +106,16 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="models:ProxyGroup">
-                            <Border
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="0">
-                                <StackPanel>
-                                    <!-- Group header -->
-                                    <Grid Padding="16,12" ColumnSpacing="8">
+                            <Expander
+                                IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+
+                                <!-- Group header -->
+                                <Expander.Header>
+                                    <Grid ColumnSpacing="8" Margin="0,0,4,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
@@ -173,93 +156,80 @@
                                             Width="32" Height="32">
                                             <FontIcon
                                                 FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                Glyph="&#xE9F3;"
+                                                Glyph="&#xF42F;"
                                                 FontSize="13" />
                                         </Button>
-
-                                        <!-- Expand chevron -->
-                                        <Button
-                                            Grid.Column="3"
-                                            Tag="{x:Bind}"
-                                            Style="{StaticResource TransparentIconButtonStyle}"
-                                            Click="GroupExpand_Click"
-                                            Width="32" Height="32">
-                                            <FontIcon
-                                                FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                Glyph="{x:Bind ChevronGlyph, Mode=OneWay}"
-                                                FontSize="11" />
-                                        </Button>
                                     </Grid>
+                                </Expander.Header>
 
-                                    <!-- Nodes list (visible when expanded) -->
-                                    <ItemsRepeater
-                                        ItemsSource="{x:Bind NodeViews, Mode=OneWay}"
-                                        Visibility="{x:Bind ExpandedVisibility, Mode=OneWay}"
-                                        Margin="0,0,0,8">
-                                        <ItemsRepeater.Layout>
-                                            <StackLayout Spacing="0" />
-                                        </ItemsRepeater.Layout>
-                                        <ItemsRepeater.ItemTemplate>
-                                            <DataTemplate x:DataType="models:ProxyNodeView">
-                                                <Button
-                                                    Tag="{x:Bind}"
-                                                    HorizontalAlignment="Stretch"
-                                                    HorizontalContentAlignment="Stretch"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Padding="16,6,16,6"
-                                                    Click="Node_Click">
-                                                    <Grid ColumnSpacing="8">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="24" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
+                                <!-- Node list -->
+                                <ItemsRepeater
+                                    ItemsSource="{x:Bind NodeViews, Mode=OneWay}"
+                                    Margin="0,0,0,4">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Spacing="0" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ProxyNodeView">
+                                            <Button
+                                                Tag="{x:Bind}"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="0,6"
+                                                Click="Node_Click">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="20" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                        <!-- Selected indicator dot -->
-                                                        <Ellipse
-                                                            Grid.Column="0"
-                                                            Width="6" Height="6"
-                                                            Fill="{ThemeResource AccentFillColorDefaultBrush}"
-                                                            Visibility="{x:Bind SelectedDotVisibility, Mode=OneWay}"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center" />
+                                                    <!-- Selected indicator dot -->
+                                                    <Ellipse
+                                                        Grid.Column="0"
+                                                        Width="6" Height="6"
+                                                        Fill="{ThemeResource AccentFillColorDefaultBrush}"
+                                                        Visibility="{x:Bind SelectedDotVisibility, Mode=OneWay}"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center" />
 
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Text="{x:Bind Name, Mode=OneTime}"
+                                                        Style="{StaticResource BodyTextBlockStyle}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        VerticalAlignment="Center" />
+
+                                                    <!-- Testing ring -->
+                                                    <ProgressRing
+                                                        Grid.Column="2"
+                                                        IsActive="{x:Bind IsTesting, Mode=OneWay}"
+                                                        Visibility="{x:Bind TestingVisibility, Mode=OneWay}"
+                                                        Width="14" Height="14"
+                                                        VerticalAlignment="Center" />
+
+                                                    <!-- Delay badge -->
+                                                    <Border
+                                                        Grid.Column="3"
+                                                        CornerRadius="4"
+                                                        Padding="6,2"
+                                                        Visibility="{x:Bind DelayVisibility, Mode=OneWay}"
+                                                        VerticalAlignment="Center">
                                                         <TextBlock
-                                                            Grid.Column="1"
-                                                            Text="{x:Bind Name, Mode=OneTime}"
-                                                            Style="{StaticResource BodyTextBlockStyle}"
-                                                            TextTrimming="CharacterEllipsis"
-                                                            VerticalAlignment="Center" />
+                                                            Text="{x:Bind DelayDisplay, Mode=OneWay}"
+                                                            FontSize="11"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Border>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
 
-                                                        <!-- Testing ring -->
-                                                        <ProgressRing
-                                                            Grid.Column="2"
-                                                            IsActive="{x:Bind IsTesting, Mode=OneWay}"
-                                                            Visibility="{x:Bind TestingVisibility, Mode=OneWay}"
-                                                            Width="14" Height="14"
-                                                            VerticalAlignment="Center" />
-
-                                                        <!-- Delay badge -->
-                                                        <Border
-                                                            Grid.Column="3"
-                                                            CornerRadius="4"
-                                                            Padding="6,2"
-                                                            Visibility="{x:Bind DelayVisibility, Mode=OneWay}"
-                                                            VerticalAlignment="Center">
-                                                            <TextBlock
-                                                                Text="{x:Bind DelayDisplay, Mode=OneWay}"
-                                                                FontSize="11"
-                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                        </Border>
-                                                    </Grid>
-                                                </Button>
-                                            </DataTemplate>
-                                        </ItemsRepeater.ItemTemplate>
-                                    </ItemsRepeater>
-                                </StackPanel>
-                            </Border>
+                            </Expander>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

@@ -20,34 +20,12 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
     // ── Bindable labels ───────────────────────────────────────────────────────
 
     public string PageTitle => Strings.Nav_Proxy;
-    public string ModeRuleLabel => Strings.Proxy_Mode_Rule;
-    public string ModeGlobalLabel => Strings.Proxy_Mode_Global;
-    public string ModeDirectLabel => Strings.Proxy_Mode_Direct;
     public string TestAllLabel => Strings.Proxy_TestAll;
     public string RefreshLabel => Strings.Common_Refresh;
     public string NotRunningMessage => Strings.Proxy_NotRunning;
     public string NoGroupsMessage => Strings.Proxy_NoGroups;
 
     // ── Mode ──────────────────────────────────────────────────────────────────
-
-    private string _currentMode = "rule";
-    public string CurrentMode
-    {
-        get => _currentMode;
-        set
-        {
-            if (_currentMode == value) return;
-            _currentMode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsModeRule));
-            OnPropertyChanged(nameof(IsModeGlobal));
-            OnPropertyChanged(nameof(IsModeDirect));
-        }
-    }
-
-    public bool IsModeRule => _currentMode == "rule";
-    public bool IsModeGlobal => _currentMode == "global";
-    public bool IsModeDirect => _currentMode == "direct";
 
     // ── Loading / testing state ────────────────────────────────────────────────
 
@@ -65,6 +43,22 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         set { if (_isTesting == value) return; _isTesting = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsNotTesting)); }
     }
     public bool IsNotTesting => !_isTesting;
+
+    private bool _isRefreshing;
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        set
+        {
+            if (_isRefreshing == value) return;
+            _isRefreshing = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RefreshRingVisibility));
+            OnPropertyChanged(nameof(RefreshButtonVisibility));
+        }
+    }
+    public Visibility RefreshRingVisibility => _isRefreshing ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility RefreshButtonVisibility => _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
 
     public bool IsNotRunning => !MihomoService.Instance.IsRunning;
 
@@ -122,6 +116,7 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
     private async Task LoadProxiesAsync()
     {
         IsLoading = true;
+        IsRefreshing = true;
         LoadError = null;
         try
         {
@@ -148,9 +143,6 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
             ProxyGroups.Clear();
             foreach (var g in groups)
                 ProxyGroups.Add(g);
-
-            var config = await MihomoService.Instance.GetConfigAsync();
-            if (config != null) CurrentMode = config.Mode;
         }
         catch (Exception ex)
         {
@@ -159,6 +151,7 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         finally
         {
             IsLoading = false;
+            IsRefreshing = false;
         }
     }
 
@@ -220,39 +213,12 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         finally { group.IsTesting = false; }
     }
 
-    private void GroupExpand_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as FrameworkElement)?.Tag is not ProxyGroup group) return;
-        group.IsExpanded = !group.IsExpanded;
-    }
-
     private async void Node_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not ProxyNodeView nv) return;
         if (!nv.Group.IsSelector) return;
         var ok = await MihomoService.Instance.SelectProxyAsync(nv.Group.Name, nv.Node.Name);
         if (ok) nv.Group.Now = nv.Node.Name;
-    }
-
-    private async void ModeRule_Checked(object sender, RoutedEventArgs e)
-    {
-        if (!MihomoService.Instance.IsRunning) return;
-        await MihomoService.Instance.SetModeAsync("rule");
-        _currentMode = "rule";
-    }
-
-    private async void ModeGlobal_Checked(object sender, RoutedEventArgs e)
-    {
-        if (!MihomoService.Instance.IsRunning) return;
-        await MihomoService.Instance.SetModeAsync("global");
-        _currentMode = "global";
-    }
-
-    private async void ModeDirect_Checked(object sender, RoutedEventArgs e)
-    {
-        if (!MihomoService.Instance.IsRunning) return;
-        await MihomoService.Instance.SetModeAsync("direct");
-        _currentMode = "direct";
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>

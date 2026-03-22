@@ -21,7 +21,7 @@ public static class Strings
 
     // Navigation sidebar
     public static string Nav_Home => IsZh ? "首页" : "Home";
-    public static string Nav_Proxy => IsZh ? "代理" : "Proxy";
+    public static string Nav_Proxy => IsZh ? "节点" : "Nodes";
     public static string Nav_Subscription => IsZh ? "订阅" : "Subscription";
 
     // Subscription page

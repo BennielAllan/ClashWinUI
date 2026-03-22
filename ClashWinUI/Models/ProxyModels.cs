@@ -164,8 +164,6 @@ public sealed class ProxyGroup : INotifyPropertyChanged
             if (_isExpanded == value) return;
             _isExpanded = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(ExpandedVisibility));
-            OnPropertyChanged(nameof(ChevronGlyph));
         }
     }
 
@@ -182,12 +180,6 @@ public sealed class ProxyGroup : INotifyPropertyChanged
             OnPropertyChanged(nameof(TestRingVisibility));
         }
     }
-
-    [JsonIgnore]
-    public Visibility ExpandedVisibility => IsExpanded ? Visibility.Visible : Visibility.Collapsed;
-
-    [JsonIgnore]
-    public string ChevronGlyph => IsExpanded ? "\uE70E" : "\uE76C";
 
     [JsonIgnore]
     public Visibility TestButtonVisibility => IsTesting ? Visibility.Collapsed : Visibility.Visible;
