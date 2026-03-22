@@ -62,14 +62,26 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
     public string UrlOrPath
     {
         get => _urlOrPath;
-        set => SetField(ref _urlOrPath, value);
+        set
+        {
+            if (SetField(ref _urlOrPath, value))
+                OnPropertyChanged(nameof(HasUrlOrPathVisibility));
+        }
     }
 
     /// <summary>True = remote (URL), false = local file.</summary>
     public bool IsRemote
     {
         get => _isRemote;
-        set => SetField(ref _isRemote, value);
+        set
+        {
+            if (SetField(ref _isRemote, value))
+            {
+                OnPropertyChanged(nameof(TypeLabel));
+                OnPropertyChanged(nameof(TypeIcon));
+                OnPropertyChanged(nameof(RemoteIconVisibility));
+            }
+        }
     }
 
     public DateTimeOffset? UpdatedAt
@@ -131,6 +143,18 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
 
     /// <summary>Visibility for remote indicator icon.</summary>
     public Visibility RemoteIconVisibility => IsRemote ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Localized type label for the badge (Remote / Local).</summary>
+    [JsonIgnore]
+    public string TypeLabel => IsRemote ? ClashWinUI.Strings.Subscription_TypeRemote : ClashWinUI.Strings.Subscription_TypeLocal;
+
+    /// <summary>Segoe Fluent icon glyph for the type: globe for remote, document for local.</summary>
+    [JsonIgnore]
+    public string TypeIcon => IsRemote ? "\uE774" : "\uE8A5";
+
+    /// <summary>Hides the URL/path row when the field is empty.</summary>
+    [JsonIgnore]
+    public Visibility HasUrlOrPathVisibility => string.IsNullOrEmpty(UrlOrPath) ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>Tooltip for refresh button (same for all items).</summary>
     public string RefreshTooltip => ClashWinUI.Strings.Subscription_Refresh;

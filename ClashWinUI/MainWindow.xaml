@@ -44,6 +44,8 @@
             IsPaneToggleButtonVisible="False"
             IsSettingsVisible="True"
             IsTabStop="False"
+            OpenPaneLength="160"
+            ExpandedModeThresholdWidth="700"
             Loaded="OnNavigationViewLoaded"
             SelectionChanged="OnNavigationViewSelectionChanged">
             <Frame x:Name="RootFrame" />

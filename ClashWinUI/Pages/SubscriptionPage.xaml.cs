@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
 using ClashWinUI.Helpers;
 using ClashWinUI.Models;
@@ -17,17 +16,12 @@ public sealed partial class SubscriptionPage : Page
     public string PageTitle => Strings.Nav_Subscription;
     public string Subscription_Import => Strings.Subscription_Import;
     public string Subscription_New => Strings.Subscription_New;
-    public string Subscription_Open => Strings.Subscription_Open;
     public string Subscription_NoItems => Strings.Subscription_NoItems;
+    public string Subscription_EmptyTitle => Strings.Subscription_EmptyTitle;
     public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
     public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
-    public string Subscription_EditInfo => Strings.Subscription_EditInfo;
-    public string Subscription_More => Strings.Subscription_More;
-    public string Subscription_Delete => Strings.Subscription_Delete;
-    public string Subscription_UpdateIntervalMinutes => Strings.Subscription_UpdateIntervalMinutes;
 
     public ObservableCollection<SubscriptionItem> SubscriptionItems => SubscriptionService.Instance.Items;
-    private SubscriptionItem? _selectedItem;
 
     public SubscriptionPage()
     {
@@ -40,6 +34,13 @@ public sealed partial class SubscriptionPage : Page
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
+    }
+
+    private void UpdateEmptyState()
+    {
+        var isEmpty = SubscriptionItems.Count == 0;
+        EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+        SubscriptionScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private async void ImportButton_Click(object sender, RoutedEventArgs e)
@@ -59,23 +60,78 @@ public sealed partial class SubscriptionPage : Page
             await ImportFromFileAsync();
     }
 
-    private void UpdateEmptyState()
+    private async void NewButton_Click(object sender, RoutedEventArgs e)
     {
-        EmptyStatePanel.Visibility = SubscriptionItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var nameBox = new TextBox
+        {
+            PlaceholderText = Strings.Subscription_Name,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var pathBox = new TextBox
+        {
+            PlaceholderText = Strings.Subscription_UrlOrPath,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        panel.Children.Add(nameBox);
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(pathBox);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = Strings.Subscription_NewProfile,
+            Content = panel,
+            PrimaryButtonText = Strings.Subscription_New,
+            CloseButtonText = Strings.Common_Cancel
+        };
+        dialog.PrimaryButtonClick += (_, _) =>
+        {
+            var name = nameBox.Text?.Trim();
+            var path = pathBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                SubscriptionService.Instance.Add(new SubscriptionItem
+                {
+                    Name = name,
+                    UrlOrPath = path ?? string.Empty,
+                    IsRemote = false,
+                    UpdatedAt = DateTimeOffset.Now
+                });
+                UpdateEmptyState();
+            }
+        };
+        await dialog.ShowAsync();
     }
 
-    private void SubscriptionListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void SubscriptionRefresh_Click(object sender, RoutedEventArgs e)
     {
-        _selectedItem = SubscriptionListView.SelectedItem as SubscriptionItem;
+        if ((sender as FrameworkElement)?.Tag is not SubscriptionItem item) return;
+        item.IsRefreshing = true;
+        try { await RefreshSubscriptionAsync(item); }
+        finally { item.IsRefreshing = false; }
     }
 
     private void SubscriptionMore_Click(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is not SubscriptionItem item) return;
+        if ((sender as FrameworkElement)?.Tag is not SubscriptionItem item) return;
         var button = (FrameworkElement)sender;
         var flyout = new MenuFlyout();
+
+        var openItem = new MenuFlyoutItem { Text = Strings.Subscription_Open };
+        openItem.Click += async (_, _) => await OpenItemAsync(item);
+        flyout.Items.Add(openItem);
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
         var editItem = new MenuFlyoutItem { Text = Strings.Subscription_EditInfo };
-        editItem.Click += async (_, _) => { await ShowEditSubscriptionDialogAsync(item); };
+        editItem.Click += async (_, _) => await ShowEditSubscriptionDialogAsync(item);
+        flyout.Items.Add(editItem);
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
         var deleteItem = new MenuFlyoutItem { Text = Strings.Subscription_Delete };
         deleteItem.Click += async (_, _) =>
         {
@@ -93,12 +149,11 @@ public sealed partial class SubscriptionPage : Page
                 UpdateEmptyState();
             }
         };
-        flyout.Items.Add(editItem);
         flyout.Items.Add(deleteItem);
         flyout.ShowAt(button);
     }
 
-    private async System.Threading.Tasks.Task ShowEditSubscriptionDialogAsync(SubscriptionItem item)
+    private async Task ShowEditSubscriptionDialogAsync(SubscriptionItem item)
     {
         var nameBox = new TextBox
         {
@@ -149,96 +204,24 @@ public sealed partial class SubscriptionPage : Page
         await dialog.ShowAsync();
     }
 
-    private async void SubscriptionRefresh_Click(object sender, RoutedEventArgs e)
+    private async Task ImportFromUrlAsync()
     {
-        if ((sender as FrameworkElement)?.DataContext is not SubscriptionItem item) return;
-        item.IsRefreshing = true;
-        try
-        {
-            await RefreshSubscriptionAsync(item);
-        }
-        finally
-        {
-            item.IsRefreshing = false;
-        }
-    }
-
-    private static async Task RefreshSubscriptionAsync(SubscriptionItem item)
-    {
-        try
-        {
-            if (item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath))
-            {
-                using var http = new HttpClient();
-                http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
-                var response = await http.GetAsync(item.UrlOrPath);
-                response.EnsureSuccessStatusCode();
-                item.UpdatedAt = DateTimeOffset.Now;
-                if (response.Headers.TryGetValues("Subscription-Userinfo", out var values))
-                {
-                    var info = string.Join(" ", values);
-                    ParseSubscriptionUserinfo(info, item);
-                }
-            }
-            else
-            {
-                item.UpdatedAt = DateTimeOffset.Now;
-            }
-        }
-        catch
-        {
-            item.UpdatedAt = DateTimeOffset.Now;
-        }
-        await SubscriptionService.Instance.SaveAsync();
-    }
-
-    /// <summary>Parse Subscription-Userinfo header (e.g. upload=0; download=0; total=5368709120).</summary>
-    private static void ParseSubscriptionUserinfo(string header, SubscriptionItem item)
-    {
-        long? upload = null, download = null, total = null;
-        foreach (var part in header.Split(';', StringSplitOptions.TrimEntries))
-        {
-            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (kv.Length != 2) continue;
-            var key = kv[0].ToLowerInvariant();
-            if (!long.TryParse(kv[1], out var val)) continue;
-            if (key == "upload") upload = val;
-            else if (key == "download") download = val;
-            else if (key == "total") total = val;
-        }
-        if (upload.HasValue && download.HasValue)
-            item.UsageBytes = upload.Value + download.Value;
-        if (total.HasValue)
-            item.TotalBytes = total.Value;
-    }
-
-    private async void SubscriptionListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
-    {
-        if (_selectedItem != null)
-            await OpenSelectedAsync();
-    }
-
-    private async void ImportFromUrl_Click(object sender, RoutedEventArgs e) => await ImportFromUrlAsync();
-    private async void ImportFromFile_Click(object sender, RoutedEventArgs e) => await ImportFromFileAsync();
-
-    private async System.Threading.Tasks.Task ImportFromUrlAsync()
-    {
-        var urlBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_UrlPlaceholder,
-            Width = 400,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-        };
         var nameBox = new TextBox
         {
             PlaceholderText = Strings.Subscription_Name,
             Width = 400,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        var urlBox = new TextBox
+        {
+            PlaceholderText = Strings.Subscription_UrlPlaceholder,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0)
         };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
         panel.Children.Add(urlBox);
         var dialog = new ContentDialog
         {
@@ -254,21 +237,20 @@ public sealed partial class SubscriptionPage : Page
             var name = nameBox.Text?.Trim();
             if (!string.IsNullOrEmpty(url))
             {
-                var item = new SubscriptionItem
+                SubscriptionService.Instance.Add(new SubscriptionItem
                 {
                     Name = string.IsNullOrEmpty(name) ? url : name,
                     UrlOrPath = url,
                     IsRemote = true,
                     UpdatedAt = DateTimeOffset.Now
-                };
-                SubscriptionService.Instance.Add(item);
+                });
                 UpdateEmptyState();
             }
         };
         await dialog.ShowAsync();
     }
 
-    private async System.Threading.Tasks.Task ImportFromFileAsync()
+    private async Task ImportFromFileAsync()
     {
         var picker = new Windows.Storage.Pickers.FileOpenPicker
         {
@@ -285,91 +267,74 @@ public sealed partial class SubscriptionPage : Page
         }
         var file = await picker.PickSingleFileAsync();
         if (file == null) return;
-        var item = new SubscriptionItem
+        SubscriptionService.Instance.Add(new SubscriptionItem
         {
             Name = file.Name,
             UrlOrPath = file.Path,
             IsRemote = false,
             UpdatedAt = DateTimeOffset.Now
-        };
-        SubscriptionService.Instance.Add(item);
+        });
         UpdateEmptyState();
     }
 
-    private async void NewButton_Click(object sender, RoutedEventArgs e)
+    private async Task OpenItemAsync(SubscriptionItem item)
     {
-        var nameBox = new TextBox
+        if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath))
         {
-            PlaceholderText = Strings.Subscription_Name,
-            Width = 400,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-        };
-        var pathBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_UrlOrPath,
-            Width = 400,
-            Margin = new Microsoft.UI.Xaml.Thickness(0, 8, 0, 0)
-        };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
-        panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath + " (optional)", Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 0) });
-        panel.Children.Add(pathBox);
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = Strings.Subscription_NewProfile,
-            Content = panel,
-            PrimaryButtonText = Strings.Subscription_New,
-            CloseButtonText = Strings.Common_Cancel
-        };
-        dialog.PrimaryButtonClick += (_, _) =>
-        {
-            var name = nameBox.Text?.Trim();
-            var path = pathBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(name))
+            if (System.IO.File.Exists(item.UrlOrPath))
             {
-                var item = new SubscriptionItem
-                {
-                    Name = name,
-                    UrlOrPath = path ?? string.Empty,
-                    IsRemote = false,
-                    UpdatedAt = DateTimeOffset.Now
-                };
-                SubscriptionService.Instance.Add(item);
-                UpdateEmptyState();
-            }
-        };
-        await dialog.ShowAsync();
-    }
-
-    private async void OpenButton_Click(object sender, RoutedEventArgs e)
-    {
-        await OpenSelectedAsync();
-    }
-
-    private async System.Threading.Tasks.Task OpenSelectedAsync()
-    {
-        if (_selectedItem == null)
-        {
-            var d = new ContentDialog { XamlRoot = XamlRoot, Title = Strings.Subscription_Open, Content = Strings.Subscription_SelectFirst, CloseButtonText = Strings.Common_Ok };
-            await d.ShowAsync();
-            return;
-        }
-        if (!_selectedItem.IsRemote && !string.IsNullOrEmpty(_selectedItem.UrlOrPath))
-        {
-            var path = _selectedItem.UrlOrPath;
-            if (System.IO.File.Exists(path))
-            {
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-                var options = new LauncherOptions { DisplayApplicationPicker = true };
-                await Launcher.LaunchFileAsync(file, options);
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(item.UrlOrPath);
+                await Launcher.LaunchFileAsync(file, new LauncherOptions { DisplayApplicationPicker = true });
             }
         }
-        else if (_selectedItem.IsRemote && !string.IsNullOrEmpty(_selectedItem.UrlOrPath))
+        else if (item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath))
         {
-            var uri = new Uri(_selectedItem.UrlOrPath);
-            await Launcher.LaunchUriAsync(uri);
+            await Launcher.LaunchUriAsync(new Uri(item.UrlOrPath));
         }
+    }
+
+    private static async Task RefreshSubscriptionAsync(SubscriptionItem item)
+    {
+        try
+        {
+            if (item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath))
+            {
+                using var http = new HttpClient();
+                http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
+                var response = await http.GetAsync(item.UrlOrPath);
+                response.EnsureSuccessStatusCode();
+                item.UpdatedAt = DateTimeOffset.Now;
+                if (response.Headers.TryGetValues("Subscription-Userinfo", out var values))
+                    ParseSubscriptionUserinfo(string.Join(" ", values), item);
+            }
+            else
+            {
+                item.UpdatedAt = DateTimeOffset.Now;
+            }
+        }
+        catch
+        {
+            item.UpdatedAt = DateTimeOffset.Now;
+        }
+        await SubscriptionService.Instance.SaveAsync();
+    }
+
+    private static void ParseSubscriptionUserinfo(string header, SubscriptionItem item)
+    {
+        long? upload = null, download = null, total = null;
+        foreach (var part in header.Split(';', StringSplitOptions.TrimEntries))
+        {
+            var kv = part.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (kv.Length != 2) continue;
+            if (!long.TryParse(kv[1], out var val)) continue;
+            switch (kv[0].ToLowerInvariant())
+            {
+                case "upload": upload = val; break;
+                case "download": download = val; break;
+                case "total": total = val; break;
+            }
+        }
+        if (upload.HasValue && download.HasValue) item.UsageBytes = upload.Value + download.Value;
+        if (total.HasValue) item.TotalBytes = total.Value;
     }
 }

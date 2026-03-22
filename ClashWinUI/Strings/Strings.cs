@@ -45,7 +45,8 @@ public static class Strings
     public static string Subscription_More => IsZh ? "更多" : "More";
     public static string Subscription_UpdateIntervalMinutes => IsZh ? "更新间隔（分钟）" : "Update interval (minutes)";
     public static string Subscription_Update => IsZh ? "更新" : "Update";
-    public static string Subscription_NoItems => IsZh ? "暂无订阅，点击「导入」或「新建」添加。" : "No subscriptions. Use Import or New to add.";
+    public static string Subscription_NoItems => IsZh ? "使用「导入」或「新建」添加配置文件。" : "Use Import or New to add a profile.";
+    public static string Subscription_EmptyTitle => IsZh ? "暂无订阅" : "No subscriptions yet";
     public static string Subscription_Refresh => IsZh ? "刷新" : "Refresh";
     public static string Subscription_RefreshedNever => IsZh ? "从未刷新" : "Never refreshed";
     public static string Subscription_UsageTotal => IsZh ? "用量 / 总量" : "Usage / Total";

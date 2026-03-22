@@ -51,6 +51,8 @@ public sealed partial class MainWindow : Window
     {
         WindowHelper.TrackWindow(this);
         WindowHelper.SetWindowMinSize(this, 640, 500);
+        var scale = RootGrid.XamlRoot.RasterizationScale;
+        AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(900 * scale), (int)(620 * scale)));
         TitleBarHelper.ApplySystemThemeToCaptionButtons(this, RootGrid.ActualTheme);
     }
 

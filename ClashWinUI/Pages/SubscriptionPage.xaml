@@ -7,151 +7,226 @@
     xmlns:models="using:ClashWinUI.Models"
     mc:Ignorable="d"
     Background="{ThemeResource LayerFillColorDefaultBrush}">
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <!-- Page title -->
         <TextBlock
             x:Name="PageHeader"
             Grid.Row="0"
-            Margin="36,24,36,16"
+            Margin="36,24,36,0"
             AutomationProperties.HeadingLevel="Level1"
             Style="{StaticResource TitleTextBlockStyle}"
             Text="{x:Bind PageTitle, Mode=OneWay}" />
+
+        <!-- Command bar -->
         <CommandBar
             Grid.Row="1"
-            Margin="24,0,24,12"
+            Margin="24,4,24,0"
+            HorizontalAlignment="Left"
             DefaultLabelPosition="Right"
-            Background="{ThemeResource LayerFillColorDefaultBrush}">
-            <CommandBar.PrimaryCommands>
-                    <AppBarButton
-                    x:Name="ImportButton"
-                    Label="{x:Bind Subscription_Import, Mode=OneWay}"
-                    Click="ImportButton_Click">
-                    <AppBarButton.Icon>
-                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton
-                    x:Name="NewButton"
-                    Click="NewButton_Click"
-                    Label="{x:Bind Subscription_New, Mode=OneWay}">
-                    <AppBarButton.Icon>
-                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE710;" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton
-                    x:Name="OpenButton"
-                    Click="OpenButton_Click"
-                    Label="{x:Bind Subscription_Open, Mode=OneWay}">
-                    <AppBarButton.Icon>
-                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8E5;" />
-                    </AppBarButton.Icon>
-                </AppBarButton>
-            </CommandBar.PrimaryCommands>
+            Background="Transparent">
+            <AppBarButton
+                x:Name="ImportButton"
+                Label="{x:Bind Subscription_Import, Mode=OneWay}"
+                Click="ImportButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton
+                x:Name="NewButton"
+                Label="{x:Bind Subscription_New, Mode=OneWay}"
+                Click="NewButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE710;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
         </CommandBar>
-        <Grid Grid.Row="2" Margin="24,0,24,24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <ListView
-                x:Name="SubscriptionListView"
-                Grid.Row="0"
-                MinHeight="200"
-                SelectionMode="Single"
-                ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}"
-                SelectionChanged="SubscriptionListView_SelectionChanged"
-                DoubleTapped="SubscriptionListView_DoubleTapped">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="models:SubscriptionItem">
-                        <Grid Padding="12,10" ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" MinWidth="100" />
-                                <ColumnDefinition Width="*" MinWidth="140" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind Name, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4" MaxWidth="200">
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind UsageTotalDisplay, Mode=OneWay}" />
-                                <ProgressBar
-                                    Maximum="1"
-                                    Value="{x:Bind UsageProgress, Mode=OneWay}"
-                                    Foreground="{ThemeResource AccentFillColorDefaultBrush}"
-                                    Background="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    Height="4"
-                                    CornerRadius="2" />
-                            </StackPanel>
-                            <TextBlock
-                                Grid.Column="2"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
-                                ToolTipService.ToolTip="{x:Bind RefreshedAgoDisplay, Mode=OneWay}" />
-                            <Grid Grid.Column="3" VerticalAlignment="Center" Width="32" Height="32">
-                                <ProgressRing
-                                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
-                                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
-                                    Width="16"
-                                    Height="16"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center" />
-                                <Button
-                                    Style="{StaticResource TransparentIconButtonStyle}"
-                                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneWay}"
-                                    Click="SubscriptionRefresh_Click"
-                                    Width="32"
-                                    Height="32">
-                                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE72C;" FontSize="14" />
-                                </Button>
-                            </Grid>
-                            <Button
-                                Style="{StaticResource TransparentIconButtonStyle}"
-                                Grid.Column="4"
-                                VerticalAlignment="Center"
-                                ToolTipService.ToolTip="{x:Bind MoreTooltip, Mode=OneWay}"
-                                Click="SubscriptionMore_Click"
-                                Width="32"
-                                Height="32">
-                                <SymbolIcon Symbol="More" />
-                            </Button>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-            <Grid
+
+        <!-- Content area -->
+        <Grid Grid.Row="2">
+
+            <!-- Card list -->
+            <ScrollViewer
+                x:Name="SubscriptionScrollViewer"
+                Padding="24,8,24,24"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled">
+                <ItemsRepeater
+                    x:Name="SubscriptionRepeater"
+                    ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="8" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="models:SubscriptionItem">
+                            <Border
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16,14">
+                                <Grid RowSpacing="12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Top row: type icon | name + url | badge + actions -->
+                                    <Grid Grid.Row="0" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <FontIcon
+                                            Grid.Column="0"
+                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                            Glyph="{x:Bind TypeIcon, Mode=OneWay}"
+                                            FontSize="18"
+                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                            VerticalAlignment="Center" />
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock
+                                                Text="{x:Bind Name, Mode=OneWay}"
+                                                Style="{StaticResource BodyStrongTextBlockStyle}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock
+                                                Text="{x:Bind UrlOrPath, Mode=OneWay}"
+                                                FontSize="11"
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                TextTrimming="CharacterEllipsis"
+                                                Visibility="{x:Bind HasUrlOrPathVisibility, Mode=OneWay}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                            <!-- Type badge -->
+                                            <Border
+                                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                                CornerRadius="4"
+                                                Padding="6,3">
+                                                <TextBlock
+                                                    Text="{x:Bind TypeLabel, Mode=OneWay}"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Border>
+
+                                            <!-- Refresh button / progress ring -->
+                                            <Grid Width="32" Height="32">
+                                                <ProgressRing
+                                                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
+                                                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
+                                                    Width="16"
+                                                    Height="16"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" />
+                                                <Button
+                                                    Tag="{x:Bind}"
+                                                    Style="{StaticResource TransparentIconButtonStyle}"
+                                                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
+                                                    ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneWay}"
+                                                    Click="SubscriptionRefresh_Click"
+                                                    Width="32"
+                                                    Height="32">
+                                                    <FontIcon
+                                                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                                        Glyph="&#xE72C;"
+                                                        FontSize="13" />
+                                                </Button>
+                                            </Grid>
+
+                                            <!-- More button -->
+                                            <Button
+                                                Tag="{x:Bind}"
+                                                Style="{StaticResource TransparentIconButtonStyle}"
+                                                ToolTipService.ToolTip="{x:Bind MoreTooltip, Mode=OneWay}"
+                                                Click="SubscriptionMore_Click"
+                                                Width="32"
+                                                Height="32">
+                                                <FontIcon
+                                                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                                    Glyph="&#xE712;"
+                                                    FontSize="13" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Bottom row: usage bar + timestamps -->
+                                    <Grid Grid.Row="1" ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <ProgressBar
+                                                Maximum="1"
+                                                Value="{x:Bind UsageProgress, Mode=OneWay}"
+                                                Height="4"
+                                                CornerRadius="2" />
+                                            <TextBlock
+                                                Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
+                                                FontSize="11"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                            VerticalAlignment="Bottom" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+
+            <!-- Empty state -->
+            <StackPanel
                 x:Name="EmptyStatePanel"
-                Grid.Row="0"
-                MinHeight="120"
+                HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="24">
-                <TextBlock
+                Spacing="16"
+                Visibility="Collapsed">
+                <FontIcon
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    Glyph="&#xE8F1;"
+                    FontSize="52"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{x:Bind Subscription_NoItems, Mode=OneWay}"
-                    TextAlignment="Center"
-                    TextWrapping="Wrap" />
-            </Grid>
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <StackPanel HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock
+                        Text="{x:Bind Subscription_EmptyTitle, Mode=OneWay}"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        HorizontalAlignment="Center" />
+                    <TextBlock
+                        Text="{x:Bind Subscription_NoItems, Mode=OneWay}"
+                        Style="{StaticResource BodyTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                    <Button
+                        Content="{x:Bind Subscription_Import, Mode=OneWay}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Click="ImportButton_Click" />
+                    <Button
+                        Content="{x:Bind Subscription_New, Mode=OneWay}"
+                        Click="NewButton_Click" />
+                </StackPanel>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>
