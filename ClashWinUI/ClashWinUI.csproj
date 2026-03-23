@@ -46,6 +46,9 @@
     <Content Include="Core\mihomo-windows-amd64.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Core\wintun.dll" Condition="Exists('Core\wintun.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <!--

@@ -254,25 +254,13 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         OnPropertyChanged(nameof(BusyVisibility));
     }
 
-    private async void SystemProxy_Toggled(object sender, RoutedEventArgs e)
+    private void SystemProxy_Toggled(object sender, RoutedEventArgs e)
     {
         var toggle = (ToggleSwitch)sender;
-        // Ignore programmatic changes where toggle state already matches backing field.
-        if (toggle.IsOn == _isSystemProxyEnabled) return;
-        if (toggle.IsOn)
+        bool desired = toggle.IsOn;
+        if (desired == _isSystemProxyEnabled) return;
+        if (desired)
         {
-            if (IsRunning)
-            {
-                try
-                {
-                    var cfg = await MihomoService.Instance.GetConfigAsync();
-                    if (cfg != null)
-                        _proxyPort = cfg.MixedPort > 0 ? cfg.MixedPort
-                                   : cfg.Port > 0 ? cfg.Port
-                                   : _proxyPort;
-                }
-                catch { }
-            }
             SystemProxyHelper.Enable(_proxyPort);
             _isSystemProxyEnabled = true;
         }
@@ -289,11 +277,14 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         if (toggle.IsOn == _isTunEnabled) return;
         if (!IsRunning) { IsTunEnabled = false; return; }
         var desired = toggle.IsOn;
-        var ok = await MihomoService.Instance.SetTunAsync(desired);
+        var (ok, error) = await MihomoService.Instance.SetTunAsync(desired);
         if (ok)
             _isTunEnabled = desired;
         else
+        {
             IsTunEnabled = !desired;
+            StartErrorMessage = string.IsNullOrEmpty(error) ? "TUN failed" : error;
+        }
     }
 
     private async void ModeRule_Checked(object sender, RoutedEventArgs e)

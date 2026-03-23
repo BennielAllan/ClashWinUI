@@ -109,45 +109,32 @@ public sealed class MihomoService
             {
                 FileName = exePath,
                 Arguments = args,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden,
             };
 
             LastStartupLog = string.Empty;
-            _process = Process.Start(psi);
+            try { _process = Process.Start(psi); }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+            {
+                // User cancelled the UAC prompt.
+                throw new InvalidOperationException("需要管理员权限以启动核心（TUN 模式需要）。");
+            }
             if (_process == null)
                 throw new InvalidOperationException("Failed to start mihomo process.");
-
-            // Capture stderr for diagnostics without blocking.
-            var logBuilder = new StringBuilder();
-            _process.OutputDataReceived += (_, e) => { if (e.Data != null) logBuilder.AppendLine(e.Data); };
-            _process.ErrorDataReceived  += (_, e) => { if (e.Data != null) logBuilder.AppendLine(e.Data); };
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
 
             _process.EnableRaisingEvents = true;
             _process.Exited += (_, _) =>
             {
-                LastStartupLog = logBuilder.ToString();
                 RunningStateChanged?.Invoke(this, EventArgs.Empty);
             };
 
             // Poll until the API is responsive (up to 8 s).
             var ready = await WaitForApiAsync(TimeSpan.FromSeconds(8));
-            LastStartupLog = logBuilder.ToString();
 
             if (!ready)
-            {
-                // Process may have exited with an error; grab output and throw.
-                await Task.Delay(200); // let async readers flush
-                LastStartupLog = logBuilder.ToString();
-                var detail = string.IsNullOrWhiteSpace(LastStartupLog)
-                    ? "mihomo did not respond on port " + port
-                    : LastStartupLog.Trim();
-                throw new InvalidOperationException("mihomo failed to start:\n" + detail);
-            }
+                throw new InvalidOperationException("mihomo did not respond on port " + port);
 
             RunningStateChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -454,15 +441,18 @@ public sealed class MihomoService
 
     /// <summary>
     /// Enables or disables TUN mode via PATCH /configs.
+    /// Returns (success, errorMessage).
     /// </summary>
-    public async Task<bool> SetTunAsync(bool enable, CancellationToken ct = default)
+    public async Task<(bool ok, string error)> SetTunAsync(bool enable, CancellationToken ct = default)
     {
         var enableStr = enable ? "true" : "false";
         var body = new StringContent(
             $"{{\"tun\":{{\"enable\":{enableStr},\"stack\":\"system\"}}}}",
             Encoding.UTF8, "application/json");
         var resp = await Http.PatchAsync("/configs", body, ct);
-        return resp.IsSuccessStatusCode;
+        if (resp.IsSuccessStatusCode) return (true, string.Empty);
+        var msg = await resp.Content.ReadAsStringAsync(ct);
+        return (false, $"HTTP {(int)resp.StatusCode}: {msg}");
     }
 
     // Built-in leaf proxy names that are never real groups.
@@ -633,7 +623,7 @@ public sealed class MihomoService
         catch (WebSocketException) { /* core stopped, caller handles reconnect logic */ }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+
 
     /// <summary>Encodes a string as a JSON string literal (with surrounding quotes).</summary>
     private static string JsonStr(string s) =>

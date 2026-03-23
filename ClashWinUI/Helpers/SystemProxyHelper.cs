@@ -1,11 +1,11 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 
 namespace ClashWinUI.Helpers;
 
 /// <summary>
-/// Reads and writes the Windows system HTTP proxy setting via the registry.
-/// Changes are propagated to running processes via WinInet notification.
+/// Reads and writes the Windows system HTTP proxy setting via PowerShell child processes,
+/// bypassing MSIX registry virtualisation for both reads and writes.
 /// </summary>
 internal static class SystemProxyHelper
 {
@@ -14,42 +14,54 @@ internal static class SystemProxyHelper
         nint hInternet, int dwOption, nint lpBuffer, int dwBufferLength);
 
     private const int INTERNET_OPTION_SETTINGS_CHANGED = 39;
-    private const int INTERNET_OPTION_REFRESH = 37;
-    private const string RegPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
+    private const int INTERNET_OPTION_REFRESH          = 37;
 
     public static bool IsEnabled()
     {
-        try
+        var psi = new ProcessStartInfo
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegPath);
-            return key?.GetValue("ProxyEnable") is int v && v == 1;
-        }
-        catch { return false; }
+            FileName = "powershell.exe",
+            Arguments = "-NonInteractive -WindowStyle Hidden -Command \"(Get-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings').ProxyEnable\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+        };
+        using var p = Process.Start(psi);
+        var output = p?.StandardOutput.ReadToEnd().Trim();
+        p?.WaitForExit(3000);
+        return output == "1";
     }
 
     public static void Enable(int port)
     {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: true);
-            if (key == null) return;
-            key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
-            key.SetValue("ProxyServer", $"127.0.0.1:{port}", RegistryValueKind.String);
-            Notify();
-        }
-        catch { }
+        RunPs($@"
+$r = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+Set-ItemProperty $r ProxyEnable 1
+Set-ItemProperty $r ProxyServer '127.0.0.1:{port}'
+");
+        Notify();
     }
 
     public static void Disable()
     {
-        try
+        RunPs(@"
+$r = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+Set-ItemProperty $r ProxyEnable 0
+");
+        Notify();
+    }
+
+    private static void RunPs(string script)
+    {
+        var psi = new ProcessStartInfo
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: true);
-            if (key == null) return;
-            key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
-            Notify();
-        }
-        catch { }
+            FileName = "powershell.exe",
+            Arguments = $"-NonInteractive -WindowStyle Hidden -Command \"{script.Replace("\"", "\\\"")}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        using var p = Process.Start(psi);
+        p?.WaitForExit(3000);
     }
 
     private static void Notify()
