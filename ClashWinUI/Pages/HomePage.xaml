@@ -44,13 +44,16 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Subscription Card -->
-                    <Border
+                    <Button
                         Grid.Column="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="20,16">
+                        Padding="20,16"
+                        Click="SubscriptionCard_Click">
                         <StackPanel VerticalAlignment="Center" Spacing="4">
                             <TextBlock
                                 Text="{x:Bind ActiveSubscriptionLabel, Mode=OneWay}"
@@ -60,21 +63,20 @@
                                 Text="{x:Bind SubscriptionName, Mode=OneWay}"
                                 Style="{StaticResource BodyStrongTextBlockStyle}"
                                 TextTrimming="CharacterEllipsis" />
-                            <TextBlock
-                                Text="{x:Bind SubscriptionTypeLabel, Mode=OneWay}"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}" />
                         </StackPanel>
-                    </Border>
+                    </Button>
 
                     <!-- Current Node Card -->
-                    <Border
+                    <Button
                         Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="20,16">
+                        Padding="20,16"
+                        Click="NodeCard_Click">
                         <StackPanel VerticalAlignment="Center" Spacing="4">
                             <TextBlock
                                 Text="{x:Bind CurrentNodeLabel, Mode=OneWay}"
@@ -84,13 +86,8 @@
                                 Text="{x:Bind CurrentNodeName, Mode=OneWay}"
                                 Style="{StaticResource BodyStrongTextBlockStyle}"
                                 TextTrimming="CharacterEllipsis" />
-                            <TextBlock
-                                Text="{x:Bind CurrentNodeGroup, Mode=OneWay}"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                TextTrimming="CharacterEllipsis" />
                         </StackPanel>
-                    </Border>
+                    </Button>
                 </Grid>
 
                 <!-- Row 2: Network Mode (settings-style rows) -->

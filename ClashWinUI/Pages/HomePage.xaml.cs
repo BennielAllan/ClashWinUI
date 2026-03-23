@@ -68,18 +68,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         private set { _subscriptionName = value; OnPropertyChanged(); }
     }
 
-    private string _subscriptionTypeLabel = string.Empty;
-    public string SubscriptionTypeLabel
-    {
-        get => _subscriptionTypeLabel;
-        private set { _subscriptionTypeLabel = value; OnPropertyChanged(); }
-    }
-
     // ── Network mode ──────────────────────────────────────────────────────────
-
-    // Guard flag: set while programmatically updating toggle bindings so the
-    // Toggled event (which fires on programmatic changes too) is ignored.
-    private bool _settingToggles;
 
     private bool _isSystemProxyEnabled;
     public bool IsSystemProxyEnabled
@@ -89,9 +78,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         {
             if (_isSystemProxyEnabled == value) return;
             _isSystemProxyEnabled = value;
-            _settingToggles = true;
             OnPropertyChanged();
-            _settingToggles = false;
         }
     }
 
@@ -103,9 +90,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         {
             if (_isTunEnabled == value) return;
             _isTunEnabled = value;
-            _settingToggles = true;
             OnPropertyChanged();
-            _settingToggles = false;
         }
     }
 
@@ -131,13 +116,6 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
     {
         get => _currentNodeName;
         private set { _currentNodeName = value; OnPropertyChanged(); }
-    }
-
-    private string _currentNodeGroup = string.Empty;
-    public string CurrentNodeGroup
-    {
-        get => _currentNodeGroup;
-        private set { _currentNodeGroup = value; OnPropertyChanged(); }
     }
 
     // ── Proxy port (cached for system-proxy enable) ───────────────────────────
@@ -176,7 +154,6 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             {
                 IsTunEnabled = false;
                 CurrentNodeName = "—";
-                CurrentNodeGroup = string.Empty;
             }
         });
     }
@@ -201,12 +178,10 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             if (hasConfig)
             {
                 SubscriptionName = item.Name;
-                SubscriptionTypeLabel = item.TypeLabel;
                 return;
             }
         }
         SubscriptionName = Strings.Home_NoSubscription;
-        SubscriptionTypeLabel = string.Empty;
     }
 
     private async Task RefreshCoreInfoAsync()
@@ -223,9 +198,8 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
                            : 7890;
             }
 
-            var (group, node) = await MihomoService.Instance.GetCurrentProxyAsync();
-            CurrentNodeName  = string.IsNullOrEmpty(node) ? "—" : node;
-            CurrentNodeGroup = group;
+            var (_, node) = await MihomoService.Instance.GetCurrentProxyAsync();
+            CurrentNodeName = string.IsNullOrEmpty(node) ? "—" : node;
         }
         catch { }
     }
@@ -280,12 +254,25 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         OnPropertyChanged(nameof(BusyVisibility));
     }
 
-    private void SystemProxy_Toggled(object sender, RoutedEventArgs e)
+    private async void SystemProxy_Toggled(object sender, RoutedEventArgs e)
     {
-        if (_settingToggles) return;
         var toggle = (ToggleSwitch)sender;
+        // Ignore programmatic changes where toggle state already matches backing field.
+        if (toggle.IsOn == _isSystemProxyEnabled) return;
         if (toggle.IsOn)
         {
+            if (IsRunning)
+            {
+                try
+                {
+                    var cfg = await MihomoService.Instance.GetConfigAsync();
+                    if (cfg != null)
+                        _proxyPort = cfg.MixedPort > 0 ? cfg.MixedPort
+                                   : cfg.Port > 0 ? cfg.Port
+                                   : _proxyPort;
+                }
+                catch { }
+            }
             SystemProxyHelper.Enable(_proxyPort);
             _isSystemProxyEnabled = true;
         }
@@ -298,15 +285,15 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private async void TunMode_Toggled(object sender, RoutedEventArgs e)
     {
-        if (_settingToggles) return;
-        if (!IsRunning) { IsTunEnabled = false; return; }
         var toggle = (ToggleSwitch)sender;
+        if (toggle.IsOn == _isTunEnabled) return;
+        if (!IsRunning) { IsTunEnabled = false; return; }
         var desired = toggle.IsOn;
         var ok = await MihomoService.Instance.SetTunAsync(desired);
         if (ok)
-            _isTunEnabled = desired; // sync backing field; switch already shows correct state
+            _isTunEnabled = desired;
         else
-            IsTunEnabled = !desired; // revert on failure
+            IsTunEnabled = !desired;
     }
 
     private async void ModeRule_Checked(object sender, RoutedEventArgs e)
@@ -328,6 +315,27 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         if (!IsRunning) return;
         await MihomoService.Instance.SetModeAsync("direct");
         _currentMode = "direct";
+    }
+
+    private void SubscriptionCard_Click(object sender, RoutedEventArgs e) =>
+        NavigateTo("Subscription");
+
+    private void NodeCard_Click(object sender, RoutedEventArgs e) =>
+        NavigateTo("Proxy");
+
+    private void NavigateTo(string tag)
+    {
+        var win = WindowHelper.GetWindowForElement(this) as MainWindow;
+        if (win == null) return;
+        var nav = win.NavigationView;
+        foreach (var obj in nav.MenuItems)
+        {
+            if (obj is NavigationViewItem item && item.Tag as string == tag)
+            {
+                nav.SelectedItem = item;
+                break;
+            }
+        }
     }
 
     private void ErrorBar_Closed(InfoBar sender, InfoBarClosedEventArgs args) =>

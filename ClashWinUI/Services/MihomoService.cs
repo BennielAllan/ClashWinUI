@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -464,8 +465,18 @@ public sealed class MihomoService
         return resp.IsSuccessStatusCode;
     }
 
+    // Built-in leaf proxy names that are never real groups.
+    private static readonly HashSet<string> _builtinProxies =
+        new(StringComparer.OrdinalIgnoreCase) { "DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE" };
+
+    // Keywords used to identify the primary selector group in rule mode.
+    private static readonly string[] _primaryKeywords =
+        ["节点选择", "select", "proxy", "auto"];
+
     /// <summary>
-    /// Returns the active (group, node) pair by following GLOBAL → top group → Now.
+    /// Returns the active (group, node) pair.
+    /// In rule mode: finds the primary selector group (by name keywords) and returns its Now.
+    /// In other modes: follows GLOBAL → Now → group.Now.
     /// Returns ("", "") when the info is unavailable.
     /// </summary>
     public async Task<(string group, string node)> GetCurrentProxyAsync(CancellationToken ct = default)
@@ -474,12 +485,38 @@ public sealed class MihomoService
         {
             var resp = await Http.GetFromJsonAsync("/proxies", AppJsonContext.Default.ProxiesResponse, ct);
             if (resp == null) return ("", "");
-            if (!resp.Proxies.TryGetValue("GLOBAL", out var global)) return ("", "");
-            var topGroupName = global.Now ?? "";
-            if (string.IsNullOrEmpty(topGroupName)) return ("", "");
-            if (!resp.Proxies.TryGetValue(topGroupName, out var topGroup)) return (topGroupName, topGroupName);
-            var nodeName = topGroup.Now ?? topGroupName;
-            return (topGroupName, nodeName);
+
+            var config = await GetConfigAsync(ct);
+            var mode = config?.Mode?.ToLowerInvariant() ?? "rule";
+
+            if (mode == "rule")
+            {
+                // In rule mode, look for the primary selector group by keyword priority.
+                var groups = resp.Proxies.Values
+                    .Where(p => p.All != null && !_builtinProxies.Contains(p.Name))
+                    .ToList();
+
+                var primary = _primaryKeywords
+                    .SelectMany(kw => groups.Where(g =>
+                        g.Name.Contains(kw, StringComparison.OrdinalIgnoreCase)))
+                    .FirstOrDefault()
+                    ?? groups.FirstOrDefault();
+
+                if (primary == null) return ("", "");
+                var nodeName = primary.Now ?? "";
+                return (primary.Name, string.IsNullOrEmpty(nodeName) ? primary.Name : nodeName);
+            }
+            else
+            {
+                // Global / direct mode: follow GLOBAL → Now.
+                if (!resp.Proxies.TryGetValue("GLOBAL", out var global)) return ("", "");
+                var topGroupName = global.Now ?? "";
+                if (string.IsNullOrEmpty(topGroupName)) return ("", "");
+                if (_builtinProxies.Contains(topGroupName)) return ("GLOBAL", topGroupName);
+                if (!resp.Proxies.TryGetValue(topGroupName, out var topGroup)) return (topGroupName, topGroupName);
+                var nodeName = topGroup.Now ?? topGroupName;
+                return (topGroupName, nodeName);
+            }
         }
         catch { return ("", ""); }
     }
