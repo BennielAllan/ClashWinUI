@@ -21,7 +21,7 @@ internal static class SystemProxyHelper
         var psi = new ProcessStartInfo
         {
             FileName = "powershell.exe",
-            Arguments = "-NonInteractive -WindowStyle Hidden -Command \"(Get-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings').ProxyEnable\"",
+            Arguments = "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"(Get-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings').ProxyEnable\"",
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -56,7 +56,7 @@ Set-ItemProperty $r ProxyEnable 0
         var psi = new ProcessStartInfo
         {
             FileName = "powershell.exe",
-            Arguments = $"-NonInteractive -WindowStyle Hidden -Command \"{script.Replace("\"", "\\\"")}\"",
+            Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -Command \"{script.Replace("\"", "\\\"")}\"",
             UseShellExecute = false,
             CreateNoWindow = true,
         };

@@ -138,7 +138,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
     {
         await SubscriptionService.Instance.LoadAsync();
         RefreshSubscriptionInfo();
-        IsSystemProxyEnabled = SystemProxyHelper.IsEnabled();
+        IsSystemProxyEnabled = await Task.Run(SystemProxyHelper.IsEnabled);
         if (IsRunning)
             await RefreshCoreInfoAsync();
     }
@@ -254,19 +254,19 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         OnPropertyChanged(nameof(BusyVisibility));
     }
 
-    private void SystemProxy_Toggled(object sender, RoutedEventArgs e)
+    private async void SystemProxy_Toggled(object sender, RoutedEventArgs e)
     {
         var toggle = (ToggleSwitch)sender;
         bool desired = toggle.IsOn;
         if (desired == _isSystemProxyEnabled) return;
         if (desired)
         {
-            SystemProxyHelper.Enable(_proxyPort);
+            await Task.Run(() => SystemProxyHelper.Enable(_proxyPort));
             _isSystemProxyEnabled = true;
         }
         else
         {
-            SystemProxyHelper.Disable();
+            await Task.Run(() => SystemProxyHelper.Disable());
             _isSystemProxyEnabled = false;
         }
     }

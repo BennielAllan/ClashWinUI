@@ -4,8 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource LayerFillColorDefaultBrush}">
+    mc:Ignorable="d">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -16,6 +15,7 @@
         <!-- Page title -->
         <TextBlock
             Grid.Row="0"
+            MaxWidth="1064"
             Margin="36,24,36,0"
             AutomationProperties.HeadingLevel="Level1"
             Style="{StaticResource TitleTextBlockStyle}"
@@ -24,9 +24,9 @@
         <!-- Content -->
         <ScrollViewer
             Grid.Row="1"
-            Padding="24,12,24,24"
+            Padding="36,12,36,24"
             VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="12">
+            <StackPanel MaxWidth="1064" Spacing="12">
 
                 <!-- Start error banner -->
                 <InfoBar
@@ -51,7 +51,7 @@
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
                         Padding="20,16"
                         Click="SubscriptionCard_Click">
                         <StackPanel VerticalAlignment="Center" Spacing="4">
@@ -74,7 +74,7 @@
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
                         Padding="20,16"
                         Click="NodeCard_Click">
                         <StackPanel VerticalAlignment="Center" Spacing="4">
@@ -95,7 +95,7 @@
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="{ThemeResource ControlCornerRadius}"
                     Padding="20,12">
                     <StackPanel Spacing="0">
                         <TextBlock
@@ -166,7 +166,7 @@
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="{ThemeResource ControlCornerRadius}"
                     Padding="20,16">
                     <StackPanel Spacing="12">
                         <TextBlock
@@ -200,7 +200,7 @@
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="{ThemeResource ControlCornerRadius}"
                     Padding="20,16">
                     <Grid>
                         <Grid.ColumnDefinitions>

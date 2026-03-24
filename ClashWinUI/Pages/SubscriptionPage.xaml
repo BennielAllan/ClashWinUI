@@ -5,8 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:ClashWinUI.Models"
-    mc:Ignorable="d"
-    Background="{ThemeResource LayerFillColorDefaultBrush}">
+    mc:Ignorable="d">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -19,6 +18,7 @@
         <TextBlock
             x:Name="PageHeader"
             Grid.Row="0"
+            MaxWidth="1064"
             Margin="36,24,36,0"
             AutomationProperties.HeadingLevel="Level1"
             Style="{StaticResource TitleTextBlockStyle}"
@@ -27,7 +27,7 @@
         <!-- Command bar -->
         <CommandBar
             Grid.Row="1"
-            Margin="12,4,24,0"
+            Margin="24,4,36,0"
             HorizontalAlignment="Left"
             DefaultLabelPosition="Right"
             Background="Transparent">
@@ -55,11 +55,12 @@
             <!-- Card list -->
             <ScrollViewer
                 x:Name="SubscriptionScrollViewer"
-                Padding="24,8,24,24"
+                Padding="36,8,36,24"
                 VerticalScrollBarVisibility="Auto"
                 HorizontalScrollBarVisibility="Disabled">
                 <ItemsRepeater
                     x:Name="SubscriptionRepeater"
+                    MaxWidth="1064"
                     ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="8" />
@@ -70,7 +71,7 @@
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="{ThemeResource ControlCornerRadius}"
                                 Padding="16,14">
                                 <Grid RowSpacing="12">
                                     <Grid.RowDefinitions>
