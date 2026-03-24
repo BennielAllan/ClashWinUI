@@ -4,7 +4,7 @@
 
 ## 截图
 
-> 待补充
+<img width="1770" height="1215" alt="image" src="https://github.com/user-attachments/assets/e08f5cde-f328-4bfe-ab6d-889b8f62171d" />
 
 ## 功能
 
