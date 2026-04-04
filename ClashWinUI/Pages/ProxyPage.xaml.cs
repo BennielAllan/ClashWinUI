@@ -96,7 +96,7 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
             await LoadProxiesAsync();
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(async () =>
         {

@@ -143,7 +143,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             await RefreshCoreInfoAsync();
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(async () =>
         {

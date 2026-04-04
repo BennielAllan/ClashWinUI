@@ -77,7 +77,7 @@ public sealed partial class ConnectionsPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged -= OnRunningStateChanged;
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(() =>
         {

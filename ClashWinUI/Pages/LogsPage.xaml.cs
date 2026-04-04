@@ -87,7 +87,7 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged -= OnRunningStateChanged;
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(() =>
         {
@@ -186,7 +186,7 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         RebuildFiltered();
     }
 
-    private void LevelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void LevelCombo_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (LevelCombo.SelectedItem is not ComboBoxItem item) return;
         var tag = item.Tag as string ?? string.Empty;

@@ -26,6 +26,12 @@ public static class Strings
         ["Nav_Logs"]                      = ("日志",                          "Logs"),
         ["Nav_Settings"]                  = ("设置",                          "Settings"),
 
+        // Tray
+        ["Tray_SystemProxy"]              = ("系统代理",                      "System Proxy"),
+        ["Tray_TunMode"]                  = ("TUN 模式",                      "TUN Mode"),
+        ["Tray_SelectNode"]               = ("选择节点",                      "Select Node"),
+        ["Tray_Quit"]                     = ("退出",                          "Quit"),
+
         // Settings
         ["Settings_Title"]                = ("设置",                          "Settings"),
         ["Settings_Appearance"]           = ("外观与行为",                    "Appearance & behavior"),
@@ -146,6 +152,10 @@ public static class Strings
     public static string Nav_Connections  => T(nameof(Nav_Connections));
     public static string Nav_Logs         => T(nameof(Nav_Logs));
     public static string Nav_Settings     => T(nameof(Nav_Settings));
+    public static string Tray_SystemProxy => T(nameof(Tray_SystemProxy));
+    public static string Tray_TunMode     => T(nameof(Tray_TunMode));
+    public static string Tray_SelectNode  => T(nameof(Tray_SelectNode));
+    public static string Tray_Quit        => T(nameof(Tray_Quit));
 
     // ── App & Shell ─────────────────────────────────────────────────────
     public static string App_Title        => T(nameof(App_Title));

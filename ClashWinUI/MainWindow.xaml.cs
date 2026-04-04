@@ -16,7 +16,9 @@ public sealed partial class MainWindow : Window
         SetWindowProperties();
         AppSettings.LanguageChanged += OnLanguageChanged;
         RootGrid.ActualThemeChanged += (_, __) =>
+        {
             TitleBarHelper.ApplySystemThemeToCaptionButtons(this, RootGrid.ActualTheme);
+        };
     }
 
     private void ApplyLocalizedStrings()
