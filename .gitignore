@@ -485,4 +485,6 @@ $RECYCLE.BIN/
 /refer/
 /ClashWinUI/Core/*
 !ClashWinUI/Core/PUT_CORE_HERE.txt
+!ClashWinUI/Core/mihomo-windows-amd64.exe
+!ClashWinUI/Core/wintun.dll
 /.claude/
