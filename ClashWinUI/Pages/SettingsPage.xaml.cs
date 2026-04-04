@@ -7,14 +7,7 @@ namespace ClashWinUI.Pages;
 
 public sealed partial class SettingsPage : Page
 {
-    public string VersionDisplay
-    {
-        get
-        {
-            var v = ProcessInfoHelper.GetVersion();
-            return v != null ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : string.Empty;
-        }
-    }
+    public string VersionDisplay => "v1.0.0";
 
     public string Settings_Title => Strings.Settings_Title;
     public string Settings_Appearance => Strings.Settings_Appearance;
@@ -30,6 +23,7 @@ public sealed partial class SettingsPage : Page
     public string Language_English => Strings.Language_English;
     public string Language_Chinese => Strings.Language_Chinese;
     public string About_AppName => Strings.About_AppName;
+    public string About_GitHub => Strings.About_GitHub;
 
     public SettingsPage()
     {
@@ -37,7 +31,7 @@ public sealed partial class SettingsPage : Page
         Loaded += OnLoaded;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object _, RoutedEventArgs __)
     {
         var theme = ThemeHelper.RootTheme;
         ThemeComboBox.SelectedIndex = theme switch
@@ -50,7 +44,7 @@ public sealed partial class SettingsPage : Page
         LanguageComboBox.SelectedIndex = lang == "zh" ? 1 : 0;
     }
 
-    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void ThemeComboBox_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (ThemeComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
             return;
@@ -62,7 +56,7 @@ public sealed partial class SettingsPage : Page
         TitleBarHelper.ApplySystemThemeToCaptionButtons(window, resolved);
     }
 
-    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void LanguageComboBox_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (LanguageComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
             return;

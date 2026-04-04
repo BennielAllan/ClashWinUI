@@ -19,20 +19,19 @@
         </Grid.RowDefinitions>
         <TextBlock
             x:Name="PageHeader"
-            MaxWidth="1064"
             Margin="36,24,36,0"
             AutomationProperties.HeadingLevel="Level1"
             Style="{StaticResource TitleTextBlockStyle}"
-            Text="{x:Bind Settings_Title, Mode=OneWay}" />
+            Text="{x:Bind Settings_Title, Mode=OneTime}" />
         <ScrollViewer
             Grid.Row="1"
             Padding="36,0,36,0"
             VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Auto">
-            <StackPanel MaxWidth="1064" Spacing="{StaticResource SettingsCardSpacing}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
                 <!-- Appearance & behavior -->
-                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" Text="{x:Bind Settings_Appearance, Mode=OneWay}" />
-                <toolkit:SettingsCard Description="{x:Bind Settings_AppTheme_Description, Mode=OneWay}" Header="{x:Bind Settings_AppTheme, Mode=OneWay}">
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" Text="{x:Bind Settings_Appearance, Mode=OneTime}" />
+                <toolkit:SettingsCard Description="{x:Bind Settings_AppTheme_Description, Mode=OneTime}" Header="{x:Bind Settings_AppTheme, Mode=OneTime}">
                     <toolkit:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE790;" />
                     </toolkit:SettingsCard.HeaderIcon>
@@ -40,13 +39,13 @@
                         x:Name="ThemeComboBox"
                         AutomationProperties.AutomationId="ThemeComboBox"
                         SelectionChanged="ThemeComboBox_SelectionChanged">
-                        <ComboBoxItem Content="{x:Bind Theme_Light, Mode=OneWay}" Tag="Light" />
-                        <ComboBoxItem Content="{x:Bind Theme_Dark, Mode=OneWay}" Tag="Dark" />
-                        <ComboBoxItem Content="{x:Bind Theme_System, Mode=OneWay}" Tag="Default" />
+                        <ComboBoxItem Content="{x:Bind Theme_Light, Mode=OneTime}" Tag="Light" />
+                        <ComboBoxItem Content="{x:Bind Theme_Dark, Mode=OneTime}" Tag="Dark" />
+                        <ComboBoxItem Content="{x:Bind Theme_System, Mode=OneTime}" Tag="Default" />
                     </ComboBox>
                 </toolkit:SettingsCard>
 
-                <toolkit:SettingsCard Description="{x:Bind Settings_Language_Description, Mode=OneWay}" Header="{x:Bind Settings_Language, Mode=OneWay}">
+                <toolkit:SettingsCard Description="{x:Bind Settings_Language_Description, Mode=OneTime}" Header="{x:Bind Settings_Language, Mode=OneTime}">
                     <toolkit:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE12B;" />
                     </toolkit:SettingsCard.HeaderIcon>
@@ -54,24 +53,33 @@
                         x:Name="LanguageComboBox"
                         AutomationProperties.AutomationId="LanguageComboBox"
                         SelectionChanged="LanguageComboBox_SelectionChanged">
-                        <ComboBoxItem Content="{x:Bind Language_English, Mode=OneWay}" Tag="en" />
-                        <ComboBoxItem Content="{x:Bind Language_Chinese, Mode=OneWay}" Tag="zh" />
+                        <ComboBoxItem Content="{x:Bind Language_English, Mode=OneTime}" Tag="en" />
+                        <ComboBoxItem Content="{x:Bind Language_Chinese, Mode=OneTime}" Tag="zh" />
                     </ComboBox>
                 </toolkit:SettingsCard>
 
                 <!-- About -->
-                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" Text="{x:Bind Settings_About, Mode=OneWay}" />
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" Text="{x:Bind Settings_About, Mode=OneTime}" />
                 <toolkit:SettingsExpander
                     Margin="0,0,0,36"
-                    Description="{x:Bind Settings_About_Description, Mode=OneWay}"
-                    Header="{x:Bind About_AppName, Mode=OneWay}">
+                    Description="{x:Bind Settings_About_Description, Mode=OneTime}"
+                    Header="{x:Bind About_AppName, Mode=OneTime}">
                     <toolkit:SettingsExpander.HeaderIcon>
                         <FontIcon Glyph="&#xE946;" />
                     </toolkit:SettingsExpander.HeaderIcon>
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         IsTextSelectionEnabled="True"
-                        Text="{x:Bind VersionDisplay, Mode=OneWay}" />
+                        Text="{x:Bind VersionDisplay, Mode=OneTime}" />
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard ContentAlignment="Left">
+                            <HyperlinkButton
+                                NavigateUri="https://github.com/BennielAllan/ClashWinUI">
+                                <TextBlock Text="https://github.com/BennielAllan/ClashWinUI"
+                                           TextTrimming="CharacterEllipsis" />
+                            </HyperlinkButton>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
             </StackPanel>
         </ScrollViewer>

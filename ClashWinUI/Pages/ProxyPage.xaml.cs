@@ -90,13 +90,13 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object _, RoutedEventArgs __)
     {
         if (MihomoService.Instance.IsRunning)
             await LoadProxiesAsync();
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(async () =>
         {
@@ -164,12 +164,12 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
 
     // ── Button handlers ───────────────────────────────────────────────────────
 
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    private async void RefreshButton_Click(object _, RoutedEventArgs __)
     {
         if (MihomoService.Instance.IsRunning) await LoadProxiesAsync();
     }
 
-    private async void TestAllButton_Click(object sender, RoutedEventArgs e)
+    private async void TestAllButton_Click(object _, RoutedEventArgs __)
     {
         if (!MihomoService.Instance.IsRunning || IsTesting) return;
         IsTesting = true;
@@ -182,7 +182,7 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         finally { IsTesting = false; }
     }
 
-    private async void GroupTest_Click(object sender, RoutedEventArgs e)
+    private async void GroupTest_Click(object sender, RoutedEventArgs _)
     {
         if ((sender as FrameworkElement)?.Tag is not ProxyGroup group) return;
         await TestGroupAsync(group);
@@ -213,7 +213,7 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
         finally { group.IsTesting = false; }
     }
 
-    private async void Node_Click(object sender, RoutedEventArgs e)
+    private async void Node_Click(object sender, RoutedEventArgs _)
     {
         if ((sender as FrameworkElement)?.Tag is not ProxyNodeView nv) return;
         if (!nv.Group.IsSelector) return;

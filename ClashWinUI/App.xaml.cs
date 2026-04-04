@@ -22,7 +22,12 @@ public partial class App : Application
         Helpers.WindowHelper.TrackWindow(MainWindow);
         MainWindow.Activate();
         BringToForeground(MainWindow);
-        MainWindow.Closed += OnMainWindowClosed;
+
+        // Initialize system tray
+        TrayIconService.Instance.Initialize();
+
+        // Intercept close → minimize to tray
+        MainWindow.AppWindow.Closing += OnAppWindowClosing;
     }
 
     [DllImport("user32.dll")]
@@ -34,9 +39,11 @@ public partial class App : Application
         SetForegroundWindow(hwnd);
     }
 
-    private async void OnMainWindowClosed(object sender, WindowEventArgs args)
+    private void OnAppWindowClosing(
+        Microsoft.UI.Windowing.AppWindow sender,
+        Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
-        if (MihomoService.Instance.IsRunning)
-            await MihomoService.Instance.StopAsync();
+        args.Cancel = true;
+        TrayIconService.Instance.HideMainWindow();
     }
 }

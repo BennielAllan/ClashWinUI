@@ -75,19 +75,19 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object _, RoutedEventArgs __)
     {
         if (MihomoService.Instance.IsRunning)
             StartStreaming();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    private void OnUnloaded(object _, RoutedEventArgs __)
     {
         StopStreaming();
         MihomoService.Instance.RunningStateChanged -= OnRunningStateChanged;
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(() =>
         {
@@ -186,7 +186,7 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         RebuildFiltered();
     }
 
-    private void LevelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void LevelCombo_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (LevelCombo.SelectedItem is not ComboBoxItem item) return;
         var tag = item.Tag as string ?? string.Empty;
@@ -198,12 +198,12 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         RebuildFiltered();
     }
 
-    private void PauseResume_Click(object sender, RoutedEventArgs e)
+    private void PauseResume_Click(object _, RoutedEventArgs __)
     {
         IsPaused = !IsPaused;
     }
 
-    private void Clear_Click(object sender, RoutedEventArgs e)
+    private void Clear_Click(object _, RoutedEventArgs __)
     {
         ClearLogs();
     }

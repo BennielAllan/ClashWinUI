@@ -134,7 +134,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object _, RoutedEventArgs __)
     {
         await SubscriptionService.Instance.LoadAsync();
         RefreshSubscriptionInfo();
@@ -143,7 +143,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             await RefreshCoreInfoAsync();
     }
 
-    private void OnRunningStateChanged(object? sender, EventArgs e)
+    private void OnRunningStateChanged(object? _, EventArgs __)
     {
         _dq.TryEnqueue(async () =>
         {
@@ -206,7 +206,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     // ── Button handlers ───────────────────────────────────────────────────────
 
-    private async void CoreToggle_Click(object sender, RoutedEventArgs e)
+    private async void CoreToggle_Click(object _, RoutedEventArgs __)
     {
         if (_isBusy) return;
         SetBusy(true);
@@ -254,7 +254,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         OnPropertyChanged(nameof(BusyVisibility));
     }
 
-    private async void SystemProxy_Toggled(object sender, RoutedEventArgs e)
+    private async void SystemProxy_Toggled(object sender, RoutedEventArgs _)
     {
         var toggle = (ToggleSwitch)sender;
         bool desired = toggle.IsOn;
@@ -271,7 +271,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         }
     }
 
-    private async void TunMode_Toggled(object sender, RoutedEventArgs e)
+    private async void TunMode_Toggled(object sender, RoutedEventArgs _)
     {
         var toggle = (ToggleSwitch)sender;
         if (toggle.IsOn == _isTunEnabled) return;
@@ -287,31 +287,31 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         }
     }
 
-    private async void ModeRule_Checked(object sender, RoutedEventArgs e)
+    private async void ModeRule_Checked(object _, RoutedEventArgs __)
     {
         if (!IsRunning) return;
         await MihomoService.Instance.SetModeAsync("rule");
         _currentMode = "rule";
     }
 
-    private async void ModeGlobal_Checked(object sender, RoutedEventArgs e)
+    private async void ModeGlobal_Checked(object _, RoutedEventArgs __)
     {
         if (!IsRunning) return;
         await MihomoService.Instance.SetModeAsync("global");
         _currentMode = "global";
     }
 
-    private async void ModeDirect_Checked(object sender, RoutedEventArgs e)
+    private async void ModeDirect_Checked(object _, RoutedEventArgs __)
     {
         if (!IsRunning) return;
         await MihomoService.Instance.SetModeAsync("direct");
         _currentMode = "direct";
     }
 
-    private void SubscriptionCard_Click(object sender, RoutedEventArgs e) =>
+    private void SubscriptionCard_Click(object _, RoutedEventArgs __) =>
         NavigateTo("Subscription");
 
-    private void NodeCard_Click(object sender, RoutedEventArgs e) =>
+    private void NodeCard_Click(object _, RoutedEventArgs __) =>
         NavigateTo("Proxy");
 
     private void NavigateTo(string tag)
@@ -329,7 +329,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         }
     }
 
-    private void ErrorBar_Closed(InfoBar sender, InfoBarClosedEventArgs args) =>
+    private void ErrorBar_Closed(InfoBar _, InfoBarClosedEventArgs __) =>
         StartErrorMessage = string.Empty;
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>

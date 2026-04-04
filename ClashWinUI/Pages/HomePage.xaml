@@ -109,15 +109,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock
-                                    Text="{x:Bind SystemProxyLabel, Mode=OneWay}"
-                                    Style="{StaticResource BodyTextBlockStyle}" />
-                                <TextBlock
-                                    Text="{x:Bind SystemProxyDescLabel, Mode=OneWay}"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="{x:Bind SystemProxyLabel, Mode=OneWay}"
+                                Style="{StaticResource BodyTextBlockStyle}"
+                                VerticalAlignment="Center" />
                             <ToggleSwitch
                                 Grid.Column="1"
                                 IsOn="{x:Bind IsSystemProxyEnabled, Mode=OneWay}"
@@ -139,15 +135,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock
-                                    Text="{x:Bind TunModeLabel, Mode=OneWay}"
-                                    Style="{StaticResource BodyTextBlockStyle}" />
-                                <TextBlock
-                                    Text="{x:Bind TunModeDescLabel, Mode=OneWay}"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="0"
+                                Text="{x:Bind TunModeLabel, Mode=OneWay}"
+                                Style="{StaticResource BodyTextBlockStyle}"
+                                VerticalAlignment="Center" />
                             <ToggleSwitch
                                 Grid.Column="1"
                                 IsOn="{x:Bind IsTunEnabled, Mode=OneWay}"
