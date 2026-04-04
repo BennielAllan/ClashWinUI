@@ -7,14 +7,7 @@ namespace ClashWinUI.Pages;
 
 public sealed partial class SettingsPage : Page
 {
-    public string VersionDisplay
-    {
-        get
-        {
-            var v = ProcessInfoHelper.GetVersion();
-            return v != null ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : string.Empty;
-        }
-    }
+    public string VersionDisplay => "v1.0.0";
 
     public string Settings_Title => Strings.Settings_Title;
     public string Settings_Appearance => Strings.Settings_Appearance;
@@ -30,6 +23,7 @@ public sealed partial class SettingsPage : Page
     public string Language_English => Strings.Language_English;
     public string Language_Chinese => Strings.Language_Chinese;
     public string About_AppName => Strings.About_AppName;
+    public string About_GitHub => Strings.About_GitHub;
 
     public SettingsPage()
     {
