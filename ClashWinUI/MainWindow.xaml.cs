@@ -1,7 +1,7 @@
 using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
+
 using Microsoft.UI.Xaml.Navigation;
 using ClashWinUI.Helpers;
 using ClashWinUI.Pages;
@@ -15,7 +15,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         SetWindowProperties();
         AppSettings.LanguageChanged += OnLanguageChanged;
-        RootGrid.ActualThemeChanged += (_, _) =>
+        RootGrid.ActualThemeChanged += (_, __) =>
             TitleBarHelper.ApplySystemThemeToCaptionButtons(this, RootGrid.ActualTheme);
     }
 
@@ -23,8 +23,6 @@ public sealed partial class MainWindow : Window
     {
         Title = Strings.App_Title;
         titleBar.Title = Strings.App_Title;
-        if (controlsSearchBox != null)
-            controlsSearchBox.PlaceholderText = Strings.Search_Placeholder;
         UpdateNavigationItemLabels();
     }
 
@@ -47,7 +45,7 @@ public sealed partial class MainWindow : Window
 
     public NavigationView NavigationView => NavigationViewControl;
 
-    private void RootGrid_Loaded(object sender, RoutedEventArgs e)
+    private void RootGrid_Loaded(object _, RoutedEventArgs __)
     {
         WindowHelper.TrackWindow(this);
         WindowHelper.SetWindowMinSize(this, 640, 500);
@@ -56,10 +54,9 @@ public sealed partial class MainWindow : Window
         TitleBarHelper.ApplySystemThemeToCaptionButtons(this, RootGrid.ActualTheme);
     }
 
-    private void OnNavigationViewLoaded(object sender, RoutedEventArgs e)
+    private void OnNavigationViewLoaded(object _, RoutedEventArgs __)
     {
         RootFrame.NavigationFailed += OnNavigationFailed;
-        controlsSearchBox.PlaceholderText = Strings.Search_Placeholder;
         UpdateNavigationItemLabels();
         if (RootFrame.Content == null)
         {
@@ -74,14 +71,12 @@ public sealed partial class MainWindow : Window
         ProxyItem.Content = Strings.Nav_Proxy;
         SubscriptionItem.Content = Strings.Nav_Subscription;
         ConnectionsItem.Content = Strings.Nav_Connections;
-        RulesItem.Content = Strings.Nav_Rules;
         LogsItem.Content = Strings.Nav_Logs;
-        TestItem.Content = Strings.Nav_Test;
         if (NavigationViewControl.SettingsItem is NavigationViewItem settingsItem)
             settingsItem.Content = Strings.Nav_Settings;
     }
 
-    private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
+    private void OnNavigationFailed(object _, NavigationFailedEventArgs e)
     {
         throw new System.Exception("Failed to load Page " + e.SourcePageType?.FullName);
     }
@@ -107,27 +102,25 @@ public sealed partial class MainWindow : Window
             "Proxy" => typeof(ProxyPage),
             "Subscription" => typeof(SubscriptionPage),
             "Connections" => typeof(ConnectionsPage),
-            "Rules" => typeof(RulesPage),
             "Logs" => typeof(LogsPage),
-            "Test" => typeof(TestPage),
             _ => null
         };
         if (pageType != null && RootFrame.CurrentSourcePageType != pageType)
             Navigate(pageType);
     }
 
-    private void TitleBar_BackRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
+    private void TitleBar_BackRequested(Microsoft.UI.Xaml.Controls.TitleBar _, object __)
     {
         if (RootFrame.CanGoBack)
             RootFrame.GoBack();
     }
 
-    private void TitleBar_PaneToggleRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
+    private void TitleBar_PaneToggleRequested(Microsoft.UI.Xaml.Controls.TitleBar _, object __)
     {
         NavigationViewControl.IsPaneOpen = !NavigationViewControl.IsPaneOpen;
     }
 
-    private void OnPaneDisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args)
+    private void OnPaneDisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs _)
     {
         titleBar.IsPaneToggleButtonVisible = sender.PaneDisplayMode != NavigationViewPaneDisplayMode.Top;
     }

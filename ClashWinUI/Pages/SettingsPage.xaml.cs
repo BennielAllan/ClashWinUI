@@ -31,7 +31,7 @@ public sealed partial class SettingsPage : Page
         Loaded += OnLoaded;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object _, RoutedEventArgs __)
     {
         var theme = ThemeHelper.RootTheme;
         ThemeComboBox.SelectedIndex = theme switch
@@ -44,7 +44,7 @@ public sealed partial class SettingsPage : Page
         LanguageComboBox.SelectedIndex = lang == "zh" ? 1 : 0;
     }
 
-    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void ThemeComboBox_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (ThemeComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
             return;
@@ -56,7 +56,7 @@ public sealed partial class SettingsPage : Page
         TitleBarHelper.ApplySystemThemeToCaptionButtons(window, resolved);
     }
 
-    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void LanguageComboBox_SelectionChanged(object _, SelectionChangedEventArgs __)
     {
         if (LanguageComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
             return;

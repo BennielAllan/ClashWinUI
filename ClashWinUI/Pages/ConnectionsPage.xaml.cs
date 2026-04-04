@@ -65,13 +65,13 @@ public sealed partial class ConnectionsPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object _, RoutedEventArgs __)
     {
         if (MihomoService.Instance.IsRunning)
             StartStreaming();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    private void OnUnloaded(object _, RoutedEventArgs __)
     {
         StopStreaming();
         MihomoService.Instance.RunningStateChanged -= OnRunningStateChanged;
@@ -198,13 +198,13 @@ public sealed partial class ConnectionsPage : Page, INotifyPropertyChanged
         RebuildFiltered();
     }
 
-    private async void CloseConnection_Click(object sender, RoutedEventArgs e)
+    private async void CloseConnection_Click(object sender, RoutedEventArgs _)
     {
         if ((sender as FrameworkElement)?.Tag is not ConnectionItem conn) return;
         await MihomoService.Instance.CloseConnectionAsync(conn.Id);
     }
 
-    private async void CloseAll_Click(object sender, RoutedEventArgs e)
+    private async void CloseAll_Click(object _, RoutedEventArgs __)
     {
         var confirm = new ContentDialog
         {

@@ -75,13 +75,13 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         MihomoService.Instance.RunningStateChanged += OnRunningStateChanged;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object _, RoutedEventArgs __)
     {
         if (MihomoService.Instance.IsRunning)
             StartStreaming();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    private void OnUnloaded(object _, RoutedEventArgs __)
     {
         StopStreaming();
         MihomoService.Instance.RunningStateChanged -= OnRunningStateChanged;
@@ -198,12 +198,12 @@ public sealed partial class LogsPage : Page, INotifyPropertyChanged
         RebuildFiltered();
     }
 
-    private void PauseResume_Click(object sender, RoutedEventArgs e)
+    private void PauseResume_Click(object _, RoutedEventArgs __)
     {
         IsPaused = !IsPaused;
     }
 
-    private void Clear_Click(object sender, RoutedEventArgs e)
+    private void Clear_Click(object _, RoutedEventArgs __)
     {
         ClearLogs();
     }

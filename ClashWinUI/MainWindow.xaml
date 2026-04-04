@@ -21,19 +21,11 @@
         <TitleBar
             x:Name="titleBar"
             Title="ClashWinUI"
+            Height="48"
             BackRequested="TitleBar_BackRequested"
             IsBackButtonVisible="{x:Bind RootFrame.CanGoBack, Mode=OneWay}"
             IsPaneToggleButtonVisible="True"
             PaneToggleRequested="TitleBar_PaneToggleRequested">
-            <TitleBar.Content>
-                <AutoSuggestBox
-                    x:Name="controlsSearchBox"
-                    Width="320"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    PlaceholderText="Search..."
-                    QueryIcon="Find" />
-            </TitleBar.Content>
         </TitleBar>
         <NavigationView
             x:Name="NavigationViewControl"
@@ -70,19 +62,9 @@
                         <FontIcon Glyph="&#xE12B;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="RulesItem" Tag="Rules">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8B1;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
                 <NavigationViewItem x:Name="LogsItem" Tag="Logs">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A5;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem x:Name="TestItem" Tag="Test">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE912;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

@@ -39,7 +39,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         SubscriptionService.Instance.Items.CollectionChanged += (_, _) => UpdateEmptyState();
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object _, RoutedEventArgs __)
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
@@ -52,7 +52,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         SubscriptionScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private async void ImportButton_Click(object sender, RoutedEventArgs e)
+    private async void ImportButton_Click(object _, RoutedEventArgs __)
     {
         var dialog = new ContentDialog
         {
@@ -69,7 +69,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             await ImportFromFileAsync();
     }
 
-    private async void NewButton_Click(object sender, RoutedEventArgs e)
+    private async void NewButton_Click(object _, RoutedEventArgs __)
     {
         var nameBox = new TextBox
         {
@@ -115,7 +115,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         await dialog.ShowAsync();
     }
 
-    private async void SubscriptionRefresh_Click(object sender, RoutedEventArgs e)
+    private async void SubscriptionRefresh_Click(object sender, RoutedEventArgs _)
     {
         if ((sender as FrameworkElement)?.Tag is not SubscriptionItem item) return;
         item.IsRefreshing = true;
@@ -123,7 +123,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         finally { item.IsRefreshing = false; }
     }
 
-    private void SubscriptionMore_Click(object sender, RoutedEventArgs e)
+    private void SubscriptionMore_Click(object sender, RoutedEventArgs _)
     {
         if ((sender as FrameworkElement)?.Tag is not SubscriptionItem item) return;
         var button = (FrameworkElement)sender;
