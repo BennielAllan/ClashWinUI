@@ -74,11 +74,23 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             Width = 400,
             Margin = new Thickness(0, 8, 0, 0)
         };
+        var intervalBox = new NumberBox
+        {
+            Value = 10,
+            Minimum = 0,
+            SmallChange = 1,
+            LargeChange = 60,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+            Width = 180,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
         panel.Children.Add(nameBox);
         panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
         panel.Children.Add(urlBox);
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(intervalBox);
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
@@ -87,17 +99,58 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             PrimaryButtonText = Strings.Subscription_New,
             CloseButtonText = Strings.Common_Cancel
         };
-        dialog.PrimaryButtonClick += (_, _) =>
+        dialog.PrimaryButtonClick += async (_, _) =>
         {
             var name = nameBox.Text?.Trim();
             var url = urlBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name)) return;
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                // Try to download the subscription content first
+                try
+                {
+                    using var http = new HttpClient();
+                    http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
+                    var response = await http.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var newItem = new SubscriptionItem
+                    {
+                        Name = name,
+                        UrlOrPath = url,
+                        IsRemote = true,
+                        UpdateIntervalMinutes = double.IsNaN(intervalBox.Value) ? 0 : (int)Math.Max(0, intervalBox.Value),
+                        UpdatedAt = DateTimeOffset.Now
+                    };
+                    var profilesDir = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "ClashWinUI", "profiles");
+                    System.IO.Directory.CreateDirectory(profilesDir);
+                    var cachePath = System.IO.Path.Combine(profilesDir, $"{newItem.Id}.yaml");
+                    var content = await response.Content.ReadAsStringAsync();
+                    await System.IO.File.WriteAllTextAsync(cachePath, content);
+                    newItem.CachedConfigPath = cachePath;
+
+                    if (response.Headers.TryGetValues("Subscription-Userinfo", out var values))
+                        ParseSubscriptionUserinfo(string.Join(" ", values), newItem);
+
+                    SubscriptionService.Instance.Add(newItem);
+                    UpdateEmptyState();
+                }
+                catch
+                {
+                    // Download failed, don't add the subscription
+                }
+            }
+            else
             {
                 SubscriptionService.Instance.Add(new SubscriptionItem
                 {
                     Name = name,
-                    UrlOrPath = url ?? string.Empty,
-                    IsRemote = !string.IsNullOrEmpty(url),
+                    UrlOrPath = string.Empty,
+                    IsRemote = false,
+                    UpdateIntervalMinutes = double.IsNaN(intervalBox.Value) ? 0 : (int)Math.Max(0, intervalBox.Value),
                     UpdatedAt = DateTimeOffset.Now
                 });
                 UpdateEmptyState();
@@ -176,7 +229,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             SmallChange = 1,
             LargeChange = 60,
             SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-            Width = 120,
+            Width = 180,
             Margin = new Thickness(0, 8, 0, 0)
         };
         var panel = new StackPanel { Spacing = 8 };
