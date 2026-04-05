@@ -9,17 +9,26 @@
 ## 功能
 
 - 系统代理 / TUN 模式
-- 订阅管理（URL / 本地文件，自动刷新）
+- 订阅管理（新建订阅，自动下载配置）
 - 节点选择与延迟测试
 - 实时日志 / 连接监控
 - 代理模式（规则 / 全局 / 直连）
 - 系统托盘（代理开关、节点选择）
+- 最小化到托盘，关闭时可选退出
 - 明暗主题，中英双语
+
+## 安装
+
+从 [Releases](https://github.com/BennielAllan/ClashWinUI/releases) 下载最新版本。
+
+1. 双击 `.cer` 证书文件 → 安装到"受信任的根证书颁发机构"
+2. 双击 `.msix` 安装包
+3. 如提示缺少依赖，安装 `Dependencies/` 下的 `Microsoft.WindowsAppRuntime.1.8.msix`
 
 ## 使用
 
-1. 将 `mihomo-windows-amd64.exe` 放入 `ClashWinUI/Core/`（TUN 模式需额外放入 `wintun.dll`）
-2. 启动应用，添加订阅，启动内核
+1. 启动应用，点击"新建"添加订阅 URL
+2. 选择订阅，点击首页"启动内核"
 
 ## 构建
 
