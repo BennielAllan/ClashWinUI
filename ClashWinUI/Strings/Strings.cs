@@ -69,6 +69,7 @@ public static class Strings
         ["Subscription_Update"]           = ("更新",                          "Update"),
         ["Subscription_NoItems"]          = ("使用「新建」添加配置文件。", "Use New to add a profile."),
         ["Subscription_EmptyTitle"]       = ("暂无订阅",                      "No subscriptions yet"),
+        ["Subscription_Use"]              = ("使用",                          "Use"),
         ["Subscription_Refresh"]          = ("刷新",                          "Refresh"),
         ["Subscription_RefreshedNever"]   = ("从未刷新",                      "Never refreshed"),
         ["Subscription_UsageTotal"]       = ("用量 / 总量",                   "Usage / Total"),
@@ -206,6 +207,7 @@ public static class Strings
     public static string Subscription_UsageTotal          => T(nameof(Subscription_UsageTotal));
     public static string Subscription_SelectFirst         => T(nameof(Subscription_SelectFirst));
     public static string Subscription_NoCacheHint         => T(nameof(Subscription_NoCacheHint));
+    public static string Subscription_Use                 => T(nameof(Subscription_Use));
 
     // ── Common ──────────────────────────────────────────────────────────
     public static string Common_Cancel  => T(nameof(Common_Cancel));

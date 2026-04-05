@@ -21,6 +21,7 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
     private bool _isRefreshing;
     private int _updateIntervalMinutes;
     private string? _cachedConfigPath;
+    private bool _isActive;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -136,6 +137,18 @@ public sealed class SubscriptionItem : INotifyPropertyChanged
         get => _cachedConfigPath;
         set => SetField(ref _cachedConfigPath, value);
     }
+
+    public bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            if (SetField(ref _isActive, value))
+                OnPropertyChanged(nameof(ActiveCheckVisibility));
+        }
+    }
+
+    public Visibility ActiveCheckVisibility => IsActive ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>Progress 0.0–1.0 for usage/total; 0 when no total.</summary>
     public double UsageProgress =>

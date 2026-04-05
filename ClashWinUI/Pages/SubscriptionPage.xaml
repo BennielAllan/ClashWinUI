@@ -45,126 +45,119 @@
         <Grid Grid.Row="2">
 
             <!-- Card list -->
-            <ScrollViewer
-                x:Name="SubscriptionScrollViewer"
+            <ListView
+                x:Name="SubscriptionListView"
+                ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}"
                 Padding="36,8,36,24"
-                VerticalScrollBarVisibility="Auto"
-                HorizontalScrollBarVisibility="Disabled">
-                <ItemsRepeater
-                    x:Name="SubscriptionRepeater"
-                    MaxWidth="1064"
-                    ItemsSource="{x:Bind SubscriptionItems, Mode=OneWay}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Spacing="8" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="models:SubscriptionItem">
-                            <Border
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="{ThemeResource ControlCornerRadius}"
-                                Padding="16,14">
-                                <Grid RowSpacing="12">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
+                SelectionMode="Single"
+                SelectionChanged="SubscriptionListView_SelectionChanged"
+                ItemContainerTransitions="{x:Null}">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="2" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:SubscriptionItem">
+                        <Border Padding="16,14">
+                            <Grid RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                                    <!-- Top row: name + url | actions -->
-                                    <Grid Grid.Row="0" ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+                                <!-- Top row: name + url | actions -->
+                                <Grid Grid.Row="0" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock
-                                                Text="{x:Bind Name, Mode=OneWay}"
-                                                Style="{StaticResource BodyStrongTextBlockStyle}"
-                                                TextTrimming="CharacterEllipsis" />
-                                            <TextBlock
-                                                Text="{x:Bind UrlOrPath, Mode=OneWay}"
-                                                FontSize="11"
-                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                TextTrimming="CharacterEllipsis"
-                                                Visibility="{x:Bind HasUrlOrPathVisibility, Mode=OneWay}" />
-                                        </StackPanel>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock
+                                            Text="{x:Bind Name, Mode=OneWay}"
+                                            Style="{StaticResource BodyStrongTextBlockStyle}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <TextBlock
+                                            Text="{x:Bind UrlOrPath, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                            TextTrimming="CharacterEllipsis"
+                                            Visibility="{x:Bind HasUrlOrPathVisibility, Mode=OneWay}" />
+                                    </StackPanel>
 
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-
-                                            <!-- Refresh button / progress ring -->
-                                            <Grid Width="32" Height="32">
-                                                <ProgressRing
-                                                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
-                                                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
-                                                    Width="16"
-                                                    Height="16"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center" />
-                                                <Button
-                                                    Tag="{x:Bind}"
-                                                    Style="{StaticResource TransparentIconButtonStyle}"
-                                                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
-                                                    ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneTime}"
-                                                    Click="SubscriptionRefresh_Click"
-                                                    Width="32"
-                                                    Height="32">
-                                                    <FontIcon
-                                                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                        Glyph="&#xE72C;"
-                                                        FontSize="13" />
-                                                </Button>
-                                            </Grid>
-
-                                            <!-- More button -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <!-- Refresh button / progress ring -->
+                                        <Grid Width="32" Height="32">
+                                            <ProgressRing
+                                                IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
+                                                Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
+                                                Width="16"
+                                                Height="16"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center" />
                                             <Button
                                                 Tag="{x:Bind}"
                                                 Style="{StaticResource TransparentIconButtonStyle}"
-                                                ToolTipService.ToolTip="{x:Bind MoreTooltip, Mode=OneTime}"
-                                                Click="SubscriptionMore_Click"
+                                                Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
+                                                ToolTipService.ToolTip="{x:Bind RefreshTooltip, Mode=OneTime}"
+                                                Click="SubscriptionRefresh_Click"
                                                 Width="32"
                                                 Height="32">
                                                 <FontIcon
                                                     FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                                    Glyph="&#xE712;"
+                                                    Glyph="&#xE72C;"
                                                     FontSize="13" />
                                             </Button>
-                                        </StackPanel>
-                                    </Grid>
+                                        </Grid>
 
-                                    <!-- Bottom row: usage bar + timestamps -->
-                                    <Grid Grid.Row="1" ColumnSpacing="16">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0" Spacing="4">
-                                            <ProgressBar
-                                                Maximum="1"
-                                                Value="{x:Bind UsageProgress, Mode=OneWay}"
-                                                Height="4"
-                                                CornerRadius="2" />
-                                            <TextBlock
-                                                Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
-                                                FontSize="11"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        </StackPanel>
-
-                                        <TextBlock
-                                            Grid.Column="1"
-                                            Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
-                                            FontSize="11"
-                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                            VerticalAlignment="Bottom" />
-                                    </Grid>
+                                        <!-- More button -->
+                                        <Button
+                                            Tag="{x:Bind}"
+                                            Style="{StaticResource TransparentIconButtonStyle}"
+                                            ToolTipService.ToolTip="{x:Bind MoreTooltip, Mode=OneTime}"
+                                            Click="SubscriptionMore_Click"
+                                            Width="32"
+                                            Height="32">
+                                            <FontIcon
+                                                FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                                Glyph="&#xE712;"
+                                                FontSize="13" />
+                                        </Button>
+                                    </StackPanel>
                                 </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </ScrollViewer>
+
+                                <!-- Bottom row: usage bar + timestamps -->
+                                <Grid Grid.Row="1" ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <ProgressBar
+                                            Maximum="1"
+                                            Value="{x:Bind UsageProgress, Mode=OneWay}"
+                                            Height="4"
+                                            CornerRadius="2" />
+                                        <TextBlock
+                                            Text="{x:Bind UsageTotalDisplay, Mode=OneWay}"
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Text="{x:Bind RefreshedAgoDisplay, Mode=OneWay}"
+                                        FontSize="11"
+                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                        VerticalAlignment="Bottom" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
 
             <!-- Empty state -->
             <StackPanel

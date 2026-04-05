@@ -170,18 +170,8 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private void RefreshSubscriptionInfo()
     {
-        foreach (var item in SubscriptionService.Instance.Items)
-        {
-            bool hasConfig =
-                (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) && File.Exists(item.UrlOrPath))
-                || (item.IsRemote && !string.IsNullOrEmpty(item.CachedConfigPath) && File.Exists(item.CachedConfigPath));
-            if (hasConfig)
-            {
-                SubscriptionName = item.Name;
-                return;
-            }
-        }
-        SubscriptionName = Strings.Home_NoSubscription;
+        var active = SubscriptionService.Instance.ActiveItem;
+        SubscriptionName = active != null ? active.Name : Strings.Home_NoSubscription;
     }
 
     private async Task RefreshCoreInfoAsync()
@@ -220,13 +210,14 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             else
             {
                 await SubscriptionService.Instance.LoadAsync();
+                var active = SubscriptionService.Instance.ActiveItem;
                 string? configPath = null;
-                foreach (var item in SubscriptionService.Instance.Items)
+                if (active != null)
                 {
-                    if (!item.IsRemote && !string.IsNullOrEmpty(item.UrlOrPath) && File.Exists(item.UrlOrPath))
-                    { configPath = item.UrlOrPath; break; }
-                    if (item.IsRemote && !string.IsNullOrEmpty(item.CachedConfigPath) && File.Exists(item.CachedConfigPath))
-                    { configPath = item.CachedConfigPath; break; }
+                    if (!active.IsRemote && !string.IsNullOrEmpty(active.UrlOrPath) && File.Exists(active.UrlOrPath))
+                        configPath = active.UrlOrPath;
+                    else if (active.IsRemote && !string.IsNullOrEmpty(active.CachedConfigPath) && File.Exists(active.CachedConfigPath))
+                        configPath = active.CachedConfigPath;
                 }
                 if (configPath == null)
                 {

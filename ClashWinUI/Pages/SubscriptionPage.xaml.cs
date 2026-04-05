@@ -40,13 +40,23 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
+        // Sync ListView selection with active item
+        var active = SubscriptionService.Instance.ActiveItem;
+        if (active != null)
+            SubscriptionListView.SelectedItem = active;
+    }
+
+    private void SubscriptionListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SubscriptionListView.SelectedItem is SubscriptionItem item)
+            SubscriptionService.Instance.SetActive(item);
     }
 
     private void UpdateEmptyState()
     {
         var isEmpty = SubscriptionItems.Count == 0;
         EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
-        SubscriptionScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+        SubscriptionListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
         CommandBarPanel.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
     }
 
@@ -110,9 +120,9 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         var button = (FrameworkElement)sender;
         var flyout = new MenuFlyout();
 
-        var openItem = new MenuFlyoutItem { Text = Strings.Subscription_Open };
-        openItem.Click += async (_, _) => await OpenItemAsync(item);
-        flyout.Items.Add(openItem);
+        var openUrlItem = new MenuFlyoutItem { Text = Strings.Subscription_Open };
+        openUrlItem.Click += async (_, _) => await OpenItemAsync(item);
+        flyout.Items.Add(openUrlItem);
 
         flyout.Items.Add(new MenuFlyoutSeparator());
 
