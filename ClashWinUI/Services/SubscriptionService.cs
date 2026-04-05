@@ -63,13 +63,18 @@ public sealed class SubscriptionService
 
     public void Add(SubscriptionItem item)
     {
+        if (_items.Count == 0)
+            item.IsActive = true;
         _items.Add(item);
         _ = SaveAsync();
     }
 
     public void Remove(SubscriptionItem item)
     {
+        bool wasActive = item.IsActive;
         _items.Remove(item);
+        if (wasActive && _items.Count > 0)
+            _items[0].IsActive = true;
         _ = SaveAsync();
     }
 
@@ -81,5 +86,15 @@ public sealed class SubscriptionService
             _items[idx] = item;
             _ = SaveAsync();
         }
+    }
+
+    public SubscriptionItem? ActiveItem => _items.FirstOrDefault(i => i.IsActive);
+
+    public void SetActive(SubscriptionItem item)
+    {
+        foreach (var i in _items)
+            i.IsActive = false;
+        item.IsActive = true;
+        _ = SaveAsync();
     }
 }

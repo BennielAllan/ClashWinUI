@@ -39,11 +39,32 @@ public partial class App : Application
         SetForegroundWindow(hwnd);
     }
 
-    private void OnAppWindowClosing(
+    private async void OnAppWindowClosing(
         Microsoft.UI.Windowing.AppWindow sender,
         Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
     {
         args.Cancel = true;
-        TrayIconService.Instance.HideMainWindow();
+
+        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+        {
+            XamlRoot = MainWindow.Content.XamlRoot,
+            Title = Strings.Common_Close,
+            PrimaryButtonText = Strings.Close_MinimizeToTray,
+            SecondaryButtonText = Strings.Close_ExitApp,
+            CloseButtonText = Strings.Common_Cancel,
+            DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.None
+        };
+        var result = await dialog.ShowAsync();
+        if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Secondary)
+        {
+            MihomoService.Instance.StopAsync();
+            TrayIconService.Instance.Dispose();
+            MainWindow.Close();
+            Exit();
+        }
+        else if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+        {
+            TrayIconService.Instance.HideMainWindow();
+        }
     }
 }

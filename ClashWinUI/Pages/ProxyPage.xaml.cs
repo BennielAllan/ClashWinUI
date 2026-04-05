@@ -53,12 +53,10 @@ public sealed partial class ProxyPage : Page, INotifyPropertyChanged
             if (_isRefreshing == value) return;
             _isRefreshing = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(RefreshRingVisibility));
-            OnPropertyChanged(nameof(RefreshButtonVisibility));
+            OnPropertyChanged(nameof(IsNotRefreshing));
         }
     }
-    public Visibility RefreshRingVisibility => _isRefreshing ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility RefreshButtonVisibility => _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
+    public bool IsNotRefreshing => !_isRefreshing;
 
     public bool IsNotRunning => !MihomoService.Instance.IsRunning;
 

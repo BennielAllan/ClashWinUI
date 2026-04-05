@@ -31,6 +31,9 @@ public static class Strings
         ["Tray_TunMode"]                  = ("TUN 模式",                      "TUN Mode"),
         ["Tray_SelectNode"]               = ("选择节点",                      "Select Node"),
         ["Tray_Quit"]                     = ("退出",                          "Quit"),
+        ["Close_ConfirmTitle"]            = ("关闭",                          "Close"),
+        ["Close_MinimizeToTray"]          = ("最小化",                        "Minimize"),
+        ["Close_ExitApp"]                 = ("退出程序",                      "Exit application"),
 
         // Settings
         ["Settings_Title"]                = ("设置",                          "Settings"),
@@ -67,8 +70,9 @@ public static class Strings
         ["Subscription_More"]             = ("更多",                          "More"),
         ["Subscription_UpdateIntervalMinutes"] = ("更新间隔（分钟）",         "Update interval (minutes)"),
         ["Subscription_Update"]           = ("更新",                          "Update"),
-        ["Subscription_NoItems"]          = ("使用「导入」或「新建」添加配置文件。", "Use Import or New to add a profile."),
+        ["Subscription_NoItems"]          = ("使用「新建」添加配置文件。", "Use New to add a profile."),
         ["Subscription_EmptyTitle"]       = ("暂无订阅",                      "No subscriptions yet"),
+        ["Subscription_Use"]              = ("使用",                          "Use"),
         ["Subscription_Refresh"]          = ("刷新",                          "Refresh"),
         ["Subscription_RefreshedNever"]   = ("从未刷新",                      "Never refreshed"),
         ["Subscription_UsageTotal"]       = ("用量 / 总量",                   "Usage / Total"),
@@ -89,10 +93,10 @@ public static class Strings
         ["Proxy_Mode_Rule"]               = ("规则",                          "Rule"),
         ["Proxy_Mode_Global"]             = ("全局",                          "Global"),
         ["Proxy_Mode_Direct"]             = ("直连",                          "Direct"),
-        ["Proxy_TestAll"]                 = ("全部测速",                      "Test All"),
+        ["Proxy_TestAll"]                 = ("测速",                          "Speed Test"),
         ["Proxy_TestGroup"]               = ("测速",                          "Test"),
         ["Proxy_Latency"]                 = ("延迟",                          "Latency"),
-        ["Proxy_NotRunning"]              = ("内核未运行，请先在订阅页面启动内核。", "Core is not running. Please start the core from the Subscription page."),
+        ["Proxy_NotRunning"]              = ("内核未运行，请先在首页启动内核。", "Core is not running. Please start the core from the Home page."),
         ["Proxy_Loading"]                 = ("正在加载代理组…",               "Loading proxy groups…"),
         ["Proxy_NoGroups"]                = ("没有可用的代理组",              "No proxy groups available"),
         ["Proxy_SelectNode"]              = ("选择节点",                      "Select node"),
@@ -107,7 +111,7 @@ public static class Strings
         ["Logs_Resume"]                   = ("继续",                          "Resume"),
         ["Logs_Clear"]                    = ("清空",                          "Clear"),
         ["Logs_Search"]                   = ("搜索日志…",                     "Search logs…"),
-        ["Logs_NotRunning"]               = ("内核未运行",                    "Core is not running"),
+        ["Logs_NotRunning"]               = ("内核未运行，请先在首页启动内核。", "Core is not running. Please start the core from the Home page."),
         ["Logs_Empty"]                    = ("暂无日志",                      "No logs yet"),
 
         // Connections
@@ -117,7 +121,7 @@ public static class Strings
         ["Connections_CloseAllConfirm"]   = ("确定关闭全部连接？",            "Close all connections?"),
         ["Connections_Search"]            = ("搜索连接…",                     "Search connections…"),
         ["Connections_Empty"]             = ("暂无活跃连接",                  "No active connections"),
-        ["Connections_NotRunning"]        = ("内核未运行",                    "Core is not running"),
+        ["Connections_NotRunning"]        = ("内核未运行，请先在首页启动内核。", "Core is not running. Please start the core from the Home page."),
         ["Connections_Rule"]              = ("规则",                          "Rule"),
         ["Connections_Chain"]             = ("链路",                          "Chain"),
 
@@ -156,6 +160,9 @@ public static class Strings
     public static string Tray_TunMode     => T(nameof(Tray_TunMode));
     public static string Tray_SelectNode  => T(nameof(Tray_SelectNode));
     public static string Tray_Quit        => T(nameof(Tray_Quit));
+    public static string Close_ConfirmTitle  => T(nameof(Close_ConfirmTitle));
+    public static string Close_MinimizeToTray => T(nameof(Close_MinimizeToTray));
+    public static string Close_ExitApp       => T(nameof(Close_ExitApp));
 
     // ── App & Shell ─────────────────────────────────────────────────────
     public static string App_Title        => T(nameof(App_Title));
@@ -206,6 +213,7 @@ public static class Strings
     public static string Subscription_UsageTotal          => T(nameof(Subscription_UsageTotal));
     public static string Subscription_SelectFirst         => T(nameof(Subscription_SelectFirst));
     public static string Subscription_NoCacheHint         => T(nameof(Subscription_NoCacheHint));
+    public static string Subscription_Use                 => T(nameof(Subscription_Use));
 
     // ── Common ──────────────────────────────────────────────────────────
     public static string Common_Cancel  => T(nameof(Common_Cancel));

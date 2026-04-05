@@ -18,12 +18,9 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string PageTitle => Strings.Nav_Subscription;
-    public string Subscription_Import => Strings.Subscription_Import;
     public string Subscription_New => Strings.Subscription_New;
     public string Subscription_NoItems => Strings.Subscription_NoItems;
     public string Subscription_EmptyTitle => Strings.Subscription_EmptyTitle;
-    public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
-    public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -43,30 +40,24 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
     {
         await SubscriptionService.Instance.LoadAsync();
         UpdateEmptyState();
+        // Sync ListView selection with active item
+        var active = SubscriptionService.Instance.ActiveItem;
+        if (active != null)
+            SubscriptionListView.SelectedItem = active;
+    }
+
+    private void SubscriptionListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SubscriptionListView.SelectedItem is SubscriptionItem item)
+            SubscriptionService.Instance.SetActive(item);
     }
 
     private void UpdateEmptyState()
     {
         var isEmpty = SubscriptionItems.Count == 0;
         EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
-        SubscriptionScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    private async void ImportButton_Click(object _, RoutedEventArgs __)
-    {
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = Strings.Subscription_Import,
-            PrimaryButtonText = Strings.Subscription_ImportFromUrl,
-            SecondaryButtonText = Strings.Subscription_ImportFromFile,
-            CloseButtonText = Strings.Common_Cancel
-        };
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-            await ImportFromUrlAsync();
-        else if (result == ContentDialogResult.Secondary)
-            await ImportFromFileAsync();
+        SubscriptionListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+        CommandBarPanel.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private async void NewButton_Click(object _, RoutedEventArgs __)
@@ -75,19 +66,34 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         {
             PlaceholderText = Strings.Subscription_Name,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
-        var pathBox = new TextBox
+        var urlBox = new TextBox
         {
-            PlaceholderText = Strings.Subscription_UrlOrPath,
+            PlaceholderText = Strings.Subscription_UrlPlaceholder,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        var intervalBox = new NumberBox
+        {
+            Value = 10,
+            Minimum = 0,
+            SmallChange = 1,
+            LargeChange = 60,
+            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        var panel = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name, HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(pathBox);
+        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
+        panel.Children.Add(urlBox);
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
+        panel.Children.Add(intervalBox);
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
@@ -96,17 +102,58 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             PrimaryButtonText = Strings.Subscription_New,
             CloseButtonText = Strings.Common_Cancel
         };
-        dialog.PrimaryButtonClick += (_, _) =>
+        dialog.PrimaryButtonClick += async (_, _) =>
         {
             var name = nameBox.Text?.Trim();
-            var path = pathBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(name))
+            var url = urlBox.Text?.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                // Try to download the subscription content first
+                try
+                {
+                    using var http = new HttpClient();
+                    http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ClashWinUI");
+                    var response = await http.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var newItem = new SubscriptionItem
+                    {
+                        Name = name,
+                        UrlOrPath = url,
+                        IsRemote = true,
+                        UpdateIntervalMinutes = double.IsNaN(intervalBox.Value) ? 0 : (int)Math.Max(0, intervalBox.Value),
+                        UpdatedAt = DateTimeOffset.Now
+                    };
+                    var profilesDir = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "ClashWinUI", "profiles");
+                    System.IO.Directory.CreateDirectory(profilesDir);
+                    var cachePath = System.IO.Path.Combine(profilesDir, $"{newItem.Id}.yaml");
+                    var content = await response.Content.ReadAsStringAsync();
+                    await System.IO.File.WriteAllTextAsync(cachePath, content);
+                    newItem.CachedConfigPath = cachePath;
+
+                    if (response.Headers.TryGetValues("Subscription-Userinfo", out var values))
+                        ParseSubscriptionUserinfo(string.Join(" ", values), newItem);
+
+                    SubscriptionService.Instance.Add(newItem);
+                    UpdateEmptyState();
+                }
+                catch
+                {
+                    // Download failed, don't add the subscription
+                }
+            }
+            else
             {
                 SubscriptionService.Instance.Add(new SubscriptionItem
                 {
                     Name = name,
-                    UrlOrPath = path ?? string.Empty,
+                    UrlOrPath = string.Empty,
                     IsRemote = false,
+                    UpdateIntervalMinutes = double.IsNaN(intervalBox.Value) ? 0 : (int)Math.Max(0, intervalBox.Value),
                     UpdatedAt = DateTimeOffset.Now
                 });
                 UpdateEmptyState();
@@ -129,9 +176,9 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         var button = (FrameworkElement)sender;
         var flyout = new MenuFlyout();
 
-        var openItem = new MenuFlyoutItem { Text = Strings.Subscription_Open };
-        openItem.Click += async (_, _) => await OpenItemAsync(item);
-        flyout.Items.Add(openItem);
+        var openUrlItem = new MenuFlyoutItem { Text = Strings.Subscription_Open };
+        openUrlItem.Click += async (_, _) => await OpenItemAsync(item);
+        flyout.Items.Add(openUrlItem);
 
         flyout.Items.Add(new MenuFlyoutSeparator());
 
@@ -169,14 +216,16 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             Text = item.Name,
             PlaceholderText = Strings.Subscription_Name,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var urlBox = new TextBox
         {
             Text = item.UrlOrPath,
             PlaceholderText = Strings.Subscription_UrlPlaceholder,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var intervalBox = new NumberBox
         {
@@ -185,15 +234,16 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             SmallChange = 1,
             LargeChange = 60,
             SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-            Width = 120,
-            Margin = new Thickness(0, 8, 0, 0)
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
         };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        var panel = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name, HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(urlBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(intervalBox);
         var dialog = new ContentDialog
         {
@@ -211,89 +261,6 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             _ = SubscriptionService.Instance.SaveAsync();
         };
         await dialog.ShowAsync();
-    }
-
-    private async Task ImportFromUrlAsync()
-    {
-        var nameBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_Name,
-            Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        var urlBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_UrlPlaceholder,
-            Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
-        panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(urlBox);
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = Strings.Subscription_ImportFromUrl,
-            Content = panel,
-            PrimaryButtonText = Strings.Subscription_Import,
-            CloseButtonText = Strings.Common_Cancel
-        };
-        SubscriptionItem? newItem = null;
-        dialog.PrimaryButtonClick += (_, _) =>
-        {
-            var url = urlBox.Text?.Trim();
-            var name = nameBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(url))
-            {
-                newItem = new SubscriptionItem
-                {
-                    Name = string.IsNullOrEmpty(name) ? url : name,
-                    UrlOrPath = url,
-                    IsRemote = true,
-                    UpdatedAt = DateTimeOffset.Now
-                };
-                SubscriptionService.Instance.Add(newItem);
-                UpdateEmptyState();
-            }
-        };
-        await dialog.ShowAsync();
-
-        // Auto-download the subscription content right after import.
-        if (newItem != null)
-        {
-            newItem.IsRefreshing = true;
-            try { await RefreshSubscriptionAsync(newItem); }
-            finally { newItem.IsRefreshing = false; }
-        }
-    }
-
-    private async Task ImportFromFileAsync()
-    {
-        var picker = new Windows.Storage.Pickers.FileOpenPicker
-        {
-            ViewMode = Windows.Storage.Pickers.PickerViewMode.List,
-            SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary
-        };
-        picker.FileTypeFilter.Add(".yaml");
-        picker.FileTypeFilter.Add(".yml");
-        picker.FileTypeFilter.Add(".json");
-        if (WindowHelper.GetWindowForElement(this) is { } window)
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-        }
-        var file = await picker.PickSingleFileAsync();
-        if (file == null) return;
-        SubscriptionService.Instance.Add(new SubscriptionItem
-        {
-            Name = file.Name,
-            UrlOrPath = file.Path,
-            IsRemote = false,
-            UpdatedAt = DateTimeOffset.Now
-        });
-        UpdateEmptyState();
     }
 
     private async Task OpenItemAsync(SubscriptionItem item)
