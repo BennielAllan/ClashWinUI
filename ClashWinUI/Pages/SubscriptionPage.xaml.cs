@@ -18,12 +18,9 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string PageTitle => Strings.Nav_Subscription;
-    public string Subscription_Import => Strings.Subscription_Import;
     public string Subscription_New => Strings.Subscription_New;
     public string Subscription_NoItems => Strings.Subscription_NoItems;
     public string Subscription_EmptyTitle => Strings.Subscription_EmptyTitle;
-    public string Subscription_ImportFromUrl => Strings.Subscription_ImportFromUrl;
-    public string Subscription_ImportFromFile => Strings.Subscription_ImportFromFile;
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -50,23 +47,7 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         var isEmpty = SubscriptionItems.Count == 0;
         EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
         SubscriptionScrollViewer.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    private async void ImportButton_Click(object _, RoutedEventArgs __)
-    {
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = Strings.Subscription_Import,
-            PrimaryButtonText = Strings.Subscription_ImportFromUrl,
-            SecondaryButtonText = Strings.Subscription_ImportFromFile,
-            CloseButtonText = Strings.Common_Cancel
-        };
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-            await ImportFromUrlAsync();
-        else if (result == ContentDialogResult.Secondary)
-            await ImportFromFileAsync();
+        CommandBarPanel.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private async void NewButton_Click(object _, RoutedEventArgs __)
@@ -211,89 +192,6 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             _ = SubscriptionService.Instance.SaveAsync();
         };
         await dialog.ShowAsync();
-    }
-
-    private async Task ImportFromUrlAsync()
-    {
-        var nameBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_Name,
-            Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        var urlBox = new TextBox
-        {
-            PlaceholderText = Strings.Subscription_UrlPlaceholder,
-            Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
-        panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(urlBox);
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = Strings.Subscription_ImportFromUrl,
-            Content = panel,
-            PrimaryButtonText = Strings.Subscription_Import,
-            CloseButtonText = Strings.Common_Cancel
-        };
-        SubscriptionItem? newItem = null;
-        dialog.PrimaryButtonClick += (_, _) =>
-        {
-            var url = urlBox.Text?.Trim();
-            var name = nameBox.Text?.Trim();
-            if (!string.IsNullOrEmpty(url))
-            {
-                newItem = new SubscriptionItem
-                {
-                    Name = string.IsNullOrEmpty(name) ? url : name,
-                    UrlOrPath = url,
-                    IsRemote = true,
-                    UpdatedAt = DateTimeOffset.Now
-                };
-                SubscriptionService.Instance.Add(newItem);
-                UpdateEmptyState();
-            }
-        };
-        await dialog.ShowAsync();
-
-        // Auto-download the subscription content right after import.
-        if (newItem != null)
-        {
-            newItem.IsRefreshing = true;
-            try { await RefreshSubscriptionAsync(newItem); }
-            finally { newItem.IsRefreshing = false; }
-        }
-    }
-
-    private async Task ImportFromFileAsync()
-    {
-        var picker = new Windows.Storage.Pickers.FileOpenPicker
-        {
-            ViewMode = Windows.Storage.Pickers.PickerViewMode.List,
-            SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary
-        };
-        picker.FileTypeFilter.Add(".yaml");
-        picker.FileTypeFilter.Add(".yml");
-        picker.FileTypeFilter.Add(".json");
-        if (WindowHelper.GetWindowForElement(this) is { } window)
-        {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-        }
-        var file = await picker.PickSingleFileAsync();
-        if (file == null) return;
-        SubscriptionService.Instance.Add(new SubscriptionItem
-        {
-            Name = file.Name,
-            UrlOrPath = file.Path,
-            IsRemote = false,
-            UpdatedAt = DateTimeOffset.Now
-        });
-        UpdateEmptyState();
     }
 
     private async Task OpenItemAsync(SubscriptionItem item)

@@ -26,19 +26,12 @@
 
         <!-- Command bar -->
         <CommandBar
+            x:Name="CommandBarPanel"
             Grid.Row="1"
             Margin="24,4,36,0"
             HorizontalAlignment="Left"
             DefaultLabelPosition="Right"
             Background="Transparent">
-            <AppBarButton
-                x:Name="ImportButton"
-                Label="{x:Bind Subscription_Import, Mode=OneWay}"
-                Click="ImportButton_Click">
-                <AppBarButton.Icon>
-                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE8B5;" />
-                </AppBarButton.Icon>
-            </AppBarButton>
             <AppBarButton
                 x:Name="NewButton"
                 Label="{x:Bind Subscription_New, Mode=OneWay}"
@@ -212,17 +205,8 @@
                         Style="{StaticResource SubtitleTextBlockStyle}"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         HorizontalAlignment="Center" />
-                    <TextBlock
-                        Text="{x:Bind Subscription_NoItems, Mode=OneWay}"
-                        Style="{StaticResource BodyTextBlockStyle}"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        HorizontalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                    <Button
-                        Content="{x:Bind Subscription_Import, Mode=OneWay}"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Click="ImportButton_Click" />
                     <Button
                         Content="{x:Bind Subscription_New, Mode=OneWay}"
                         Click="NewButton_Click" />

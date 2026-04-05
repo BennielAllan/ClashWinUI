@@ -24,43 +24,31 @@
             Text="{x:Bind PageTitle, Mode=OneWay}" />
 
         <!-- Command bar: refresh + test all -->
-        <Grid Grid.Row="1" Margin="36,8,36,0" ColumnSpacing="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Refresh -->
-            <Grid Grid.Column="1" Width="36" Height="36">
-                <ProgressRing
-                    IsActive="{x:Bind IsRefreshing, Mode=OneWay}"
-                    Visibility="{x:Bind RefreshRingVisibility, Mode=OneWay}"
-                    Width="16" Height="16"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center" />
-                <Button
-                    Style="{StaticResource TransparentIconButtonStyle}"
-                    Visibility="{x:Bind RefreshButtonVisibility, Mode=OneWay}"
-                    ToolTipService.ToolTip="{x:Bind RefreshLabel, Mode=OneWay}"
-                    Click="RefreshButton_Click"
-                    Width="36" Height="36">
-                    <FontIcon
-                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                        Glyph="&#xE72C;"
-                        FontSize="14" />
-                </Button>
-            </Grid>
-
-            <!-- Test All -->
-            <Button
-                Grid.Column="2"
-                Content="{x:Bind TestAllLabel, Mode=OneWay}"
-                Style="{StaticResource AccentButtonStyle}"
+        <CommandBar
+            Grid.Row="1"
+            Margin="24,4,36,0"
+            HorizontalAlignment="Left"
+            DefaultLabelPosition="Right"
+            Background="Transparent">
+            <AppBarButton
+                x:Name="RefreshAppBarButton"
+                Label="{x:Bind RefreshLabel, Mode=OneWay}"
+                Click="RefreshButton_Click"
+                IsEnabled="{x:Bind IsNotRefreshing, Mode=OneWay}">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE72C;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton
+                x:Name="TestAllAppBarButton"
+                Label="{x:Bind TestAllLabel, Mode=OneWay}"
                 Click="TestAllButton_Click"
-                Padding="12,6"
-                IsEnabled="{x:Bind IsNotTesting, Mode=OneWay}" />
-        </Grid>
+                IsEnabled="{x:Bind IsNotTesting, Mode=OneWay}">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xF42F;" />
+                </AppBarButton.Icon>
+            </AppBarButton>
+        </CommandBar>
 
         <!-- Content area -->
         <Grid Grid.Row="2">
