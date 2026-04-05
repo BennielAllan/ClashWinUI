@@ -27,9 +27,8 @@
         <CommandBar
             Grid.Row="1"
             Margin="24,4,36,0"
-            HorizontalAlignment="Left"
-            DefaultLabelPosition="Right"
-            Background="Transparent">
+            HorizontalAlignment="Right"
+            DefaultLabelPosition="Right">
             <AppBarButton
                 x:Name="RefreshAppBarButton"
                 Label="{x:Bind RefreshLabel, Mode=OneWay}"

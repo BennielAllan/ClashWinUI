@@ -29,9 +29,8 @@
             x:Name="CommandBarPanel"
             Grid.Row="1"
             Margin="24,4,36,0"
-            HorizontalAlignment="Left"
-            DefaultLabelPosition="Right"
-            Background="Transparent">
+            HorizontalAlignment="Right"
+            DefaultLabelPosition="Right">
             <AppBarButton
                 x:Name="NewButton"
                 Label="{x:Bind Subscription_New, Mode=OneWay}"
@@ -72,23 +71,14 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Top row: type icon | name + url | badge + actions -->
+                                    <!-- Top row: name + url | actions -->
                                     <Grid Grid.Row="0" ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <FontIcon
-                                            Grid.Column="0"
-                                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                            Glyph="{x:Bind TypeIcon, Mode=OneWay}"
-                                            FontSize="18"
-                                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                            VerticalAlignment="Center" />
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
                                             <TextBlock
                                                 Text="{x:Bind Name, Mode=OneWay}"
                                                 Style="{StaticResource BodyStrongTextBlockStyle}"
@@ -101,17 +91,7 @@
                                                 Visibility="{x:Bind HasUrlOrPathVisibility, Mode=OneWay}" />
                                         </StackPanel>
 
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                            <!-- Type badge -->
-                                            <Border
-                                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                CornerRadius="4"
-                                                Padding="6,3">
-                                                <TextBlock
-                                                    Text="{x:Bind TypeLabel, Mode=OneWay}"
-                                                    FontSize="11"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            </Border>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
 
                                             <!-- Refresh button / progress ring -->
                                             <Grid Width="32" Height="32">

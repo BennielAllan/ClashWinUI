@@ -58,17 +58,17 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             Width = 400,
             Margin = new Thickness(0, 8, 0, 0)
         };
-        var pathBox = new TextBox
+        var urlBox = new TextBox
         {
-            PlaceholderText = Strings.Subscription_UrlOrPath,
+            PlaceholderText = Strings.Subscription_UrlPlaceholder,
             Width = 400,
             Margin = new Thickness(0, 8, 0, 0)
         };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(pathBox);
+        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(urlBox);
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
@@ -80,14 +80,14 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         dialog.PrimaryButtonClick += (_, _) =>
         {
             var name = nameBox.Text?.Trim();
-            var path = pathBox.Text?.Trim();
+            var url = urlBox.Text?.Trim();
             if (!string.IsNullOrEmpty(name))
             {
                 SubscriptionService.Instance.Add(new SubscriptionItem
                 {
                     Name = name,
-                    UrlOrPath = path ?? string.Empty,
-                    IsRemote = false,
+                    UrlOrPath = url ?? string.Empty,
+                    IsRemote = !string.IsNullOrEmpty(url),
                     UpdatedAt = DateTimeOffset.Now
                 });
                 UpdateEmptyState();
