@@ -12,7 +12,7 @@
   <Identity
     Name="2dfa3bb2-8de2-4dd5-b06f-9b6fb8368a1d"
     Publisher="CN=Benniel Allan"
-    Version="1.0.0.0" />
+    Version="1.0.4.0" />
 
   <mp:PhoneIdentity PhoneProductId="2dfa3bb2-8de2-4dd5-b06f-9b6fb8368a1d" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
