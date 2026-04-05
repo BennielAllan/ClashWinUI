@@ -31,6 +31,9 @@ public static class Strings
         ["Tray_TunMode"]                  = ("TUN 模式",                      "TUN Mode"),
         ["Tray_SelectNode"]               = ("选择节点",                      "Select Node"),
         ["Tray_Quit"]                     = ("退出",                          "Quit"),
+        ["Close_ConfirmTitle"]            = ("关闭",                          "Close"),
+        ["Close_MinimizeToTray"]          = ("最小化",                        "Minimize"),
+        ["Close_ExitApp"]                 = ("退出程序",                      "Exit application"),
 
         // Settings
         ["Settings_Title"]                = ("设置",                          "Settings"),
@@ -157,6 +160,9 @@ public static class Strings
     public static string Tray_TunMode     => T(nameof(Tray_TunMode));
     public static string Tray_SelectNode  => T(nameof(Tray_SelectNode));
     public static string Tray_Quit        => T(nameof(Tray_Quit));
+    public static string Close_ConfirmTitle  => T(nameof(Close_ConfirmTitle));
+    public static string Close_MinimizeToTray => T(nameof(Close_MinimizeToTray));
+    public static string Close_ExitApp       => T(nameof(Close_ExitApp));
 
     // ── App & Shell ─────────────────────────────────────────────────────
     public static string App_Title        => T(nameof(App_Title));

@@ -66,13 +66,15 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
         {
             PlaceholderText = Strings.Subscription_Name,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var urlBox = new TextBox
         {
             PlaceholderText = Strings.Subscription_UrlPlaceholder,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var intervalBox = new NumberBox
         {
@@ -81,15 +83,16 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             SmallChange = 1,
             LargeChange = 60,
             SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-            Width = 180,
-            Margin = new Thickness(0, 8, 0, 0)
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
         };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        var panel = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name, HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = "URL", Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(urlBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(intervalBox);
         var dialog = new ContentDialog
         {
@@ -213,14 +216,16 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             Text = item.Name,
             PlaceholderText = Strings.Subscription_Name,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var urlBox = new TextBox
         {
             Text = item.UrlOrPath,
             PlaceholderText = Strings.Subscription_UrlPlaceholder,
             Width = 400,
-            Margin = new Thickness(0, 8, 0, 0)
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         var intervalBox = new NumberBox
         {
@@ -229,15 +234,16 @@ public sealed partial class SubscriptionPage : Page, INotifyPropertyChanged
             SmallChange = 1,
             LargeChange = 60,
             SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-            Width = 180,
-            Margin = new Thickness(0, 8, 0, 0)
+            Width = 400,
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Left
         };
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name });
+        var panel = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_Name, HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(nameBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UrlOrPath, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(urlBox);
-        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(new TextBlock { Text = Strings.Subscription_UpdateIntervalMinutes, Margin = new Thickness(0, 12, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
         panel.Children.Add(intervalBox);
         var dialog = new ContentDialog
         {
