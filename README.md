@@ -4,7 +4,12 @@
 
 ## 截图
 
-<img width="1770" height="1215" alt="image" src="https://github.com/user-attachments/assets/e08f5cde-f328-4bfe-ab6d-889b8f62171d" />
+<img width="1767" height="1211" alt="屏幕截图 2026-04-05 221622" src="https://github.com/user-attachments/assets/2f6bfdfd-595e-45bb-82b0-743edb89f3e7" />
+
+<img width="1764" height="1221" alt="屏幕截图 2026-04-05 221706" src="https://github.com/user-attachments/assets/a4c1479f-f6f6-4a33-8dc0-2c070fba739a" />
+
+<img width="1767" height="1214" alt="屏幕截图 2026-04-05 221736" src="https://github.com/user-attachments/assets/1c9e5c27-70c2-4352-9a62-db24d0d5d9d2" />
+
 
 ## 功能
 
